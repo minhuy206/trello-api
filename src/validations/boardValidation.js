@@ -28,10 +28,10 @@ const createNew = async (req, res, next) => {
 
   try {
     await schema.validateAsync(req.body, { abortEarly: false })
-    // next()
+    next()
     res
       .status(StatusCodes.CREATED)
-      .json({ message: 'POST: API create new board' })
+      .json({ message: 'POST from Validation: API create new board' })
   } catch (error) {
     res
       .status(StatusCodes.UNPROCESSABLE_ENTITY)
