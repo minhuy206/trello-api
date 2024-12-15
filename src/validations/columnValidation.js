@@ -1,13 +1,12 @@
 import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
-import { BOARD_TYPES } from '~/utils/constants'
+import { OBJECT_ID_RULE } from '~/utils/validators'
 
 const createNew = async (req, res, next) => {
   const schema = Joi.object({
     title: Joi.string().required().min(3).max(50).trim().strict(),
-    description: Joi.string().required().min(3).max(255).trim().strict(),
-    type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE).required()
+    boardId: Joi.string().required().pattern(OBJECT_ID_RULE)
   })
 
   try {
@@ -20,6 +19,6 @@ const createNew = async (req, res, next) => {
   }
 }
 
-export const boardValidation = {
+export const columnValidation = {
   createNew
 }
