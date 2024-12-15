@@ -1,8 +1,8 @@
-/* eslint-disable no-useless-catch */
 import { slugify } from '~/utils/formatter'
 import { boardModel } from '~/models/boardModel'
 import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
+import { cloneDeep } from 'lodash'
 
 const createNew = async (data) => {
   try {
@@ -24,7 +24,16 @@ const getBoard = async (boardId) => {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found')
     }
 
-    return board
+    const resBoard = cloneDeep(board)
+    resBoard.columns.forEach((column) => {
+      column.cards = resBoard.cards.filter(
+        (card) => card.columnId.equals(column._id) // Equals is a method supported by Mongodb to compare 2 ObjectId
+      )
+    })
+
+    delete resBoard.cards
+
+    return resBoard
   } catch (error) {
     throw error
   }

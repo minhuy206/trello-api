@@ -3,10 +3,8 @@ import { boardService } from '~/services/boardService'
 
 const createNew = async (req, res, next) => {
   try {
-    // Điều hướng sang service
     const createdBoard = await boardService.createNew(req.body)
 
-    // Có kết quả trả về client
     res.status(StatusCodes.CREATED).json(createdBoard)
   } catch (error) {
     next(error)
