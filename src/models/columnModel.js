@@ -50,15 +50,13 @@ const findOneById = async (boardId) => {
 
 const pushCardOrderIds = async (card) => {
   try {
-    return (
-      await GET_DB()
-        .collection(COLUMN_COLLECTION_NAME)
-        .findOneAndUpdate(
-          { _id: new ObjectId(card.columnId) },
-          { $push: { cardOrderIds: new ObjectId(card._id) } },
-          { ReturnDocument: 'after' }
-        )
-    ).value
+    return await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(card.columnId) },
+        { $push: { cardOrderIds: new ObjectId(card._id) } },
+        { ReturnDocument: 'after' }
+      )
   } catch (error) {
     throw new Error(error)
   }

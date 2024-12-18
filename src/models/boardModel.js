@@ -1,12 +1,11 @@
 import Joi from 'joi'
-import { ObjectId, ReturnDocument } from 'mongodb'
+import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
 import { OBJECT_ID_RULE } from '~/utils/validators'
 import { BOARD_TYPES } from '~/utils/constants'
 import { columnModel } from './columnModel'
 import { cardModel } from './cardModel'
 
-// Define Collection (name & schema)
 const BOARD_COLLECTION_NAME = 'boards'
 const BOARD_COLLECTION_SCHEMA = Joi.object({
   title: Joi.string().required().min(3).max(50).trim().strict(),
@@ -20,6 +19,8 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+
+const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
   return await BOARD_COLLECTION_SCHEMA.validateAsync(data, {
@@ -87,15 +88,32 @@ const getBoard = async (boardId) => {
 
 const pushColumnOrderIds = async (column) => {
   try {
-    return (
-      await GET_DB()
-        .collection(BOARD_COLLECTION_NAME)
-        .findOneAndUpdate(
-          { _id: new ObjectId(column.boardId) },
-          { $push: { columnOrderIds: new ObjectId(column._id) } },
-          { ReturnDocument: 'after' }
-        )
-    ).value
+    return await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(column.boardId) },
+        { $push: { columnOrderIds: new ObjectId(column._id) } },
+        { ReturnDocument: 'after' }
+      )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const update = async (boardId, board) => {
+  try {
+    Object.keys(board).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete board[key]
+      }
+    })
+    return await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $set: board },
+        { ReturnDocument: 'after' }
+      )
   } catch (error) {
     throw new Error(error)
   }
@@ -107,5 +125,6 @@ export const boardModel = {
   createNew,
   findOneById,
   getBoard,
-  pushColumnOrderIds
+  pushColumnOrderIds,
+  update
 }
