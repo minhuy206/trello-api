@@ -5,8 +5,8 @@ import { BOARD_TYPES } from '~/utils/constants'
 
 const createNew = async (req, res, next) => {
   const schema = Joi.object({
-    title: Joi.string().required().min(3).max(50).trim().strict(),
-    description: Joi.string().required().min(3).max(255).trim().strict(),
+    title: Joi.string().required().min(1).max(50).trim().strict(),
+    description: Joi.string().required().min(1).max(255).trim().strict(),
     type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE).required()
   })
 
@@ -20,6 +20,27 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  const schema = Joi.object({
+    title: Joi.string().min(1).max(50).trim().strict(),
+    description: Joi.string().min(1).max(255).trim().strict(),
+    type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE)
+  })
+
+  try {
+    await schema.validateAsync(req.body, {
+      abortEarly: false,
+      allowUnknown: true
+    })
+    next()
+  } catch (error) {
+    next(
+      new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    )
+  }
+}
+
 export const boardValidation = {
-  createNew
+  createNew,
+  update
 }
