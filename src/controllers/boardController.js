@@ -37,6 +37,6 @@ const update = async (req, res, next) => {
 
 export const boardController = {
   create,
-  getBoard,
-  update
+  update,
+  getBoard
 }

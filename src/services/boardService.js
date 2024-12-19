@@ -49,6 +49,6 @@ const update = async (boardId, board) => {
 
 export const boardService = {
   create,
-  getBoard,
-  update
+  update,
+  getBoard
 }

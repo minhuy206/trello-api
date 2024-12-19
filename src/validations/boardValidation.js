@@ -31,7 +31,6 @@ const update = async (req, res, next) => {
 
   try {
     await schema.validateAsync(req.body, {
-      abortEarly: false,
       allowUnknown: true
     })
     next()

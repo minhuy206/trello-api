@@ -40,7 +40,7 @@ const create = async (column) => {
   }
 }
 
-const update = async (columnId, cardId, column) => {
+const update = async (columnId, column) => {
   try {
     Object.keys(column).forEach((key) => {
       if (INVALID_UPDATE_FIELDS.includes(key)) {
@@ -48,7 +48,8 @@ const update = async (columnId, cardId, column) => {
       }
     })
 
-    await cardModel.update(cardId, { columnId: columnId })
+    if (column.cardOrderIds)
+      column.cardOrderIds = column.cardOrderIds.map((id) => new ObjectId(id))
 
     return await GET_DB()
       .collection(COLUMN_COLLECTION_NAME)
@@ -57,6 +58,18 @@ const update = async (columnId, cardId, column) => {
         { $set: column },
         { returnDocument: 'after' }
       )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const deleteColumn = async (columnId) => {
+  try {
+    return await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .deleteOne({
+        _id: new ObjectId(columnId)
+      })
   } catch (error) {
     throw new Error(error)
   }
@@ -72,13 +85,13 @@ const find = async (columnId) => {
   }
 }
 
-const pushCardOrderIds = async (card) => {
+const updateCardOrderIds = async (card, operator) => {
   try {
     return await GET_DB()
       .collection(COLUMN_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(card.columnId) },
-        { $push: { cardOrderIds: new ObjectId(card._id) } },
+        { [operator]: { cardOrderIds: new ObjectId(card._id) } },
         { returnDocument: 'after' }
       )
   } catch (error) {
@@ -91,6 +104,7 @@ export const columnModel = {
   COLUMN_COLLECTION_SCHEMA,
   create,
   update,
-  find,
-  pushCardOrderIds
+  updateCardOrderIds,
+  deleteColumn,
+  find
 }

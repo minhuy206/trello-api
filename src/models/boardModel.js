@@ -47,11 +47,29 @@ const update = async (boardId, board) => {
         delete board[key]
       }
     })
+
+    if (board.columnOrderIds)
+      board.columnOrderIds = board.columnOrderIds.map((id) => new ObjectId(id))
+
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(boardId) },
         { $set: board },
+        { returnDocument: 'after' }
+      )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const updateColumnOrderIds = async (column, operator) => {
+  try {
+    return await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(column.boardId) },
+        { [operator]: { columnOrderIds: new ObjectId(column._id) } },
         { returnDocument: 'after' }
       )
   } catch (error) {
@@ -105,26 +123,12 @@ const find = async (boardId) => {
   }
 }
 
-const pushColumnOrderIds = async (column) => {
-  try {
-    return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
-      .findOneAndUpdate(
-        { _id: new ObjectId(column.boardId) },
-        { $push: { columnOrderIds: new ObjectId(column._id) } },
-        { returnDocument: 'after' }
-      )
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
   create,
+  update,
+  updateColumnOrderIds,
   getBoard,
-  find,
-  pushColumnOrderIds,
-  update
+  find
 }
