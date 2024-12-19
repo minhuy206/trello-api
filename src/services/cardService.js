@@ -1,24 +1,24 @@
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
 
-const createNew = async (data) => {
+const create = async (card) => {
   try {
-    const createdCard = await cardModel.createNew({
-      ...data
+    const createdCard = await cardModel.create({
+      ...card
     })
 
-    const card = await cardModel.findOneById(createdCard.insertedId)
+    const newCard = await cardModel.find(createdCard.insertedId)
 
-    if (card) {
-      await columnModel.pushCardOrderIds(card)
+    if (newCard) {
+      await columnModel.pushCardOrderIds(newCard)
     }
 
-    return card
+    return newCard
   } catch (error) {
     throw error
   }
 }
 
 export const cardService = {
-  createNew
+  create
 }

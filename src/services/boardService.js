@@ -4,14 +4,14 @@ import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 
-const createNew = async (data) => {
+const create = async (board) => {
   try {
-    const createdBoard = await boardModel.createNew({
-      ...data,
-      slug: slugify(data.title)
+    const createdBoard = await boardModel.create({
+      ...board,
+      slug: slugify(board.title)
     })
 
-    return await boardModel.findOneById(createdBoard.insertedId)
+    return await boardModel.find(createdBoard.insertedId)
   } catch (error) {
     throw error
   }
@@ -48,7 +48,7 @@ const update = async (boardId, board) => {
 }
 
 export const boardService = {
-  createNew,
+  create,
   getBoard,
   update
 }

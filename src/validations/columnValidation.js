@@ -3,10 +3,10 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import { OBJECT_ID_RULE } from '~/utils/validators'
 
-const createNew = async (req, res, next) => {
+const create = async (req, res, next) => {
   const schema = Joi.object({
-    title: Joi.string().required().min(1).max(50).trim().strict(),
-    boardId: Joi.string().required().pattern(OBJECT_ID_RULE)
+    boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
+    title: Joi.string().required().min(1).max(50).trim().strict()
   })
 
   try {
@@ -19,6 +19,31 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  const schema = Joi.object({
+    column: Joi.object({
+      cardOrderIds: Joi.array()
+        .items(Joi.string().pattern(OBJECT_ID_RULE))
+        .required()
+    }),
+    cardId: Joi.string().required().pattern(OBJECT_ID_RULE)
+  })
+
+  try {
+    await schema.validateAsync(req.body, {
+      abortEarly: false,
+      allowUnknown: true
+    })
+
+    next()
+  } catch (error) {
+    next(
+      new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    )
+  }
+}
+
 export const columnValidation = {
-  createNew
+  create,
+  update
 }

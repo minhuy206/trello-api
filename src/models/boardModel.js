@@ -28,23 +28,32 @@ const validateBeforeCreate = async (data) => {
   })
 }
 
-const createNew = async (data) => {
+const create = async (column) => {
   try {
-    const validatedData = await validateBeforeCreate(data)
+    const validatedColumn = await validateBeforeCreate(column)
 
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
-      .insertOne(validatedData)
+      .insertOne(validatedColumn)
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const findOneById = async (boardId) => {
+const update = async (boardId, board) => {
   try {
+    Object.keys(board).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete board[key]
+      }
+    })
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(boardId) })
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $set: board },
+        { returnDocument: 'after' }
+      )
   } catch (error) {
     throw new Error(error)
   }
@@ -86,6 +95,16 @@ const getBoard = async (boardId) => {
   }
 }
 
+const find = async (boardId) => {
+  try {
+    return await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOne({ _id: new ObjectId(boardId) })
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 const pushColumnOrderIds = async (column) => {
   try {
     return await GET_DB()
@@ -93,26 +112,7 @@ const pushColumnOrderIds = async (column) => {
       .findOneAndUpdate(
         { _id: new ObjectId(column.boardId) },
         { $push: { columnOrderIds: new ObjectId(column._id) } },
-        { ReturnDocument: 'after' }
-      )
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
-const update = async (boardId, board) => {
-  try {
-    Object.keys(board).forEach((key) => {
-      if (INVALID_UPDATE_FIELDS.includes(key)) {
-        delete board[key]
-      }
-    })
-    return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
-      .findOneAndUpdate(
-        { _id: new ObjectId(boardId) },
-        { $set: board },
-        { ReturnDocument: 'after' }
+        { returnDocument: 'after' }
       )
   } catch (error) {
     throw new Error(error)
@@ -122,9 +122,9 @@ const update = async (boardId, board) => {
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
-  createNew,
-  findOneById,
+  create,
   getBoard,
+  find,
   pushColumnOrderIds,
   update
 }
