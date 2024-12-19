@@ -8,38 +8,61 @@ const CARD_COLLECTION_NAME = 'cards'
 const CARD_COLLECTION_SCHEMA = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
   columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
-
   title: Joi.string().required().min(1).max(50).trim().strict(),
   description: Joi.string().optional(),
-
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
-const validateBeforeCreate = async (data) => {
-  return await CARD_COLLECTION_SCHEMA.validateAsync(data, {
-    abortEarly: false
+const validateBeforeCreate = async (card) => {
+  return await CARD_COLLECTION_SCHEMA.validateAsync(card, {
+    abortEarly: true
   })
 }
 
-const createNew = async (data) => {
+const create = async (card) => {
   try {
-    const validatedData = await validateBeforeCreate(data)
+    const validatedCard = await validateBeforeCreate(card)
 
     return await GET_DB()
       .collection(CARD_COLLECTION_NAME)
       .insertOne({
-        ...validatedData,
-        boardId: new ObjectId(validatedData.boardId),
-        columnId: new ObjectId(validatedData.columnId)
+        ...validatedCard,
+        boardId: new ObjectId(validatedCard.boardId),
+        columnId: new ObjectId(validatedCard.columnId)
       })
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const findOneById = async (boardId) => {
+const update = async (cardId, card) => {
+  try {
+    Object.keys(card).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete card[key]
+      }
+    })
+
+    if (card.columnId) {
+      card.columnId = new ObjectId(card.columnId)
+    }
+
+    return await GET_DB()
+      .collection(CARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(cardId) },
+        { $set: card },
+        { ReturnDocument: 'after' }
+      )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const find = async (boardId) => {
   try {
     return await GET_DB()
       .collection(CARD_COLLECTION_NAME)
@@ -52,6 +75,7 @@ const findOneById = async (boardId) => {
 export const cardModel = {
   CARD_COLLECTION_NAME,
   CARD_COLLECTION_SCHEMA,
-  createNew,
-  findOneById
+  create,
+  update,
+  find
 }

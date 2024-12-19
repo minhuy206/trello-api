@@ -1,9 +1,9 @@
 import { StatusCodes } from 'http-status-codes'
 import { cardService } from '~/services/cardService'
 
-const createNew = async (req, res, next) => {
+const create = async (req, res, next) => {
   try {
-    const createdCard = await cardService.createNew(req.body)
+    const createdCard = await cardService.create(req.body)
 
     res.status(StatusCodes.CREATED).json(createdCard)
   } catch (error) {
@@ -12,5 +12,5 @@ const createNew = async (req, res, next) => {
 }
 
 export const cardController = {
-  createNew
+  create
 }

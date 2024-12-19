@@ -4,9 +4,7 @@ import { boardController } from '~/controllers/boardController'
 
 const Router = express.Router()
 
-Router.route('/')
-  .get()
-  .post(boardValidation.createNew, boardController.createNew)
+Router.route('/').get().post(boardValidation.create, boardController.create)
 
 Router.route('/:id')
   .get(boardController.getBoard)

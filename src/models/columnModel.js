@@ -2,6 +2,7 @@ import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
 import { OBJECT_ID_RULE } from '~/utils/validators'
+import { cardModel } from './cardModel'
 
 const COLUMN_COLLECTION_NAME = 'columns'
 const COLUMN_COLLECTION_SCHEMA = Joi.object({
@@ -16,33 +17,56 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
-const validateBeforeCreate = async (data) => {
-  return await COLUMN_COLLECTION_SCHEMA.validateAsync(data, {
+const validateBeforeCreate = async (column) => {
+  return await COLUMN_COLLECTION_SCHEMA.validateAsync(column, {
     abortEarly: false
   })
 }
 
-const createNew = async (data) => {
+const create = async (column) => {
   try {
-    const validatedData = await validateBeforeCreate(data)
+    const validatedColumn = await validateBeforeCreate(column)
 
     return await GET_DB()
       .collection(COLUMN_COLLECTION_NAME)
       .insertOne({
-        ...validatedData,
-        boardId: new ObjectId(validatedData.boardId)
+        ...validatedColumn,
+        boardId: new ObjectId(validatedColumn.boardId)
       })
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const findOneById = async (boardId) => {
+const update = async (columnId, cardId, column) => {
+  try {
+    Object.keys(column).forEach((key) => {
+      if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete column[key]
+      }
+    })
+
+    await cardModel.update(cardId, { columnId: columnId })
+
+    return await GET_DB()
+      .collection(COLUMN_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(columnId) },
+        { $set: column },
+        { returnDocument: 'after' }
+      )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const find = async (columnId) => {
   try {
     return await GET_DB()
       .collection(COLUMN_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(boardId) })
+      .findOne({ _id: new ObjectId(columnId) })
   } catch (error) {
     throw new Error(error)
   }
@@ -55,7 +79,7 @@ const pushCardOrderIds = async (card) => {
       .findOneAndUpdate(
         { _id: new ObjectId(card.columnId) },
         { $push: { cardOrderIds: new ObjectId(card._id) } },
-        { ReturnDocument: 'after' }
+        { returnDocument: 'after' }
       )
   } catch (error) {
     throw new Error(error)
@@ -65,7 +89,8 @@ const pushCardOrderIds = async (card) => {
 export const columnModel = {
   COLUMN_COLLECTION_NAME,
   COLUMN_COLLECTION_SCHEMA,
-  createNew,
-  findOneById,
+  create,
+  update,
+  find,
   pushCardOrderIds
 }
