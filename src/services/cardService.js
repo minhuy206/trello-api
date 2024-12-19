@@ -10,7 +10,7 @@ const create = async (card) => {
     const newCard = await cardModel.find(createdCard.insertedId)
 
     if (newCard) {
-      await columnModel.pushCardOrderIds(newCard)
+      await columnModel.updateCardOrderIds(newCard, '$push')
     }
 
     return newCard
