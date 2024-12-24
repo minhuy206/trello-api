@@ -6,7 +6,12 @@ import { OBJECT_ID_RULE } from '~/utils/validators'
 const create = async (req, res, next) => {
   const schema = Joi.object({
     boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
-    title: Joi.string().required().min(1).max(50).trim().strict()
+    title: Joi.string().required().min(1).max(50).trim().strict().messages({
+      'any.required': 'Title is required',
+      'string.empty': 'Title is not allowed to be empty',
+      'string.max': 'Title must be at most 50 characters',
+      'string.trim': 'Title must not have leading or trailing whitespace'
+    })
   })
 
   try {
