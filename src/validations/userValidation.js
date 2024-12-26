@@ -2,6 +2,8 @@ import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import {
+  USERNAME_RULE,
+  USERNAME_RULE_MESSAGE,
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
   PASSWORD_RULE,
@@ -10,6 +12,10 @@ import {
 
 const create = async (req, res, next) => {
   const schema = Joi.object({
+    username: Joi.string()
+      .required()
+      .pattern(USERNAME_RULE)
+      .message(USERNAME_RULE_MESSAGE),
     email: Joi.string()
       .required()
       .pattern(EMAIL_RULE)

@@ -1,7 +1,12 @@
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
-import { EMAIL_RULE, EMAIL_RULE_MESSAGE } from '~/utils/validators'
+import {
+  EMAIL_RULE,
+  EMAIL_RULE_MESSAGE,
+  USERNAME_RULE,
+  USERNAME_RULE_MESSAGE
+} from '~/utils/validators'
 
 const USER_ROLES = {
   ADMIN: 'admin',
@@ -15,7 +20,10 @@ const USER_COLLECTION_SCHEMA = Joi.object({
     .pattern(EMAIL_RULE)
     .message(EMAIL_RULE_MESSAGE),
   password: Joi.string().required(),
-  username: Joi.string().required().trim().strict(),
+  username: Joi.string()
+    .required()
+    .pattern(USERNAME_RULE)
+    .message(USERNAME_RULE_MESSAGE),
   displayName: Joi.string().required().trim().strict(),
   avatar: Joi.string().default(null),
   role: Joi.string()
@@ -70,12 +78,16 @@ const update = async (userId, account) => {
   }
 }
 
-const find = async (userId, email = null) => {
+const find = async (userId, username = null, email = null) => {
   try {
     if (email) {
       return await GET_DB()
         .collection(USER_COLLECTION_NAME)
         .findOne({ email: email })
+    } else if (username) {
+      return await GET_DB()
+        .collection(USER_COLLECTION_NAME)
+        .findOne({ username: username })
     }
     return await GET_DB()
       .collection(USER_COLLECTION_NAME)
