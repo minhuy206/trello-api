@@ -5,7 +5,7 @@ import bcryptjs from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
 import { pickUser } from '~/utils/formatter'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
-import { BrevoProvider } from '~/providers/BrevoProvider'
+import { NodemailerProvider } from '~/providers/NodemailerProvider'
 
 const create = async (account) => {
   try {
@@ -25,11 +25,15 @@ const create = async (account) => {
       verifyToken: uuidv4()
     })
 
-    // const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${account.email}&token=${account.verifyToken}`
-    // const customSubject = 'Please verify your email before using our services!'
-    // const htmlContent = `<h3>Here is your verification link:</h3><h3>${verificationLink}</h3><h3>Sincerely, <br/>minhuy</h3>`
+    const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${account.email}&token=${account.verifyToken}`
+    const customSubject = 'Please verify your email before using our services!'
+    const htmlContent = `<p>Here is your verification link:</p><p>${verificationLink}</p><p>Sincerely, <br/>minhuy</p>`
 
-    // await BrevoProvider.sendEmail(account.email, customSubject, htmlContent)
+    await NodemailerProvider.sendEmail(
+      account.email,
+      customSubject,
+      htmlContent
+    )
 
     return pickUser(await userModel.find(createdAccount.insertedId))
   } catch (error) {
