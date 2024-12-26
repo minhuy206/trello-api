@@ -7,35 +7,38 @@ import { pickUser } from '~/utils/formatter'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { NodemailerProvider } from '~/providers/NodemailerProvider'
 
-const create = async (account) => {
+const create = async ({ username, email, password }) => {
   try {
-    const existedUser = await userModel.find(null, account.email)
+    const existedUsername = await userModel.find(null, username)
 
-    if (existedUser) {
+    if (existedUsername) {
+      throw new ApiError(StatusCodes.CONFLICT, 'Username already exists')
+    }
+    const existedEmail = await userModel.find(null, null, email)
+
+    if (existedEmail) {
       throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
     }
 
-    const nameFromEmail = account.email.split('@')[0]
-
-    const createdAccount = await userModel.create({
-      email: account.email,
-      password: bcryptjs.hashSync(account.password, 8),
-      username: nameFromEmail,
-      displayName: nameFromEmail,
-      verifyToken: uuidv4()
-    })
-
-    const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${account.email}&token=${account.verifyToken}`
-    const customSubject = 'Please verify your email before using our services!'
-    const htmlContent = `<p>Here is your verification link:</p><p>${verificationLink}</p><p>Sincerely, <br/>minhuy</p>`
-
-    await NodemailerProvider.sendEmail(
-      account.email,
-      customSubject,
-      htmlContent
+    const createdAccount = await userModel.find(
+      (
+        await userModel.create({
+          username,
+          email,
+          password: bcryptjs.hashSync(password, 8),
+          displayName: username,
+          verifyToken: uuidv4()
+        })
+      ).insertedId
     )
 
-    return pickUser(await userModel.find(createdAccount.insertedId))
+    const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${createdAccount.email}&token=${createdAccount.verifyToken}`
+    const customSubject = 'Please verify your email before using our services!'
+    const htmlContent = `<p>Hi ${createdAccount.username}!</p><p>Here is your verification link:</p><p>${verificationLink}</p><p>Sincerely, <br/>minhuy</p>`
+
+    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
+
+    return pickUser(createdAccount)
   } catch (error) {
     throw error
   }
