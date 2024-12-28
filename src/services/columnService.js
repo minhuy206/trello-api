@@ -6,11 +6,13 @@ import ApiError from '~/utils/ApiError'
 
 const create = async (column) => {
   try {
-    const createdColumn = await columnModel.create({
-      ...column
-    })
-
-    const newColumn = await columnModel.find(createdColumn.insertedId)
+    const newColumn = await columnModel.find(
+      (
+        await columnModel.create({
+          ...column
+        })
+      ).insertedId
+    )
 
     if (newColumn) {
       newColumn.cards = []

@@ -6,12 +6,14 @@ import { cloneDeep } from 'lodash'
 
 const create = async (board) => {
   try {
-    const createdBoard = await boardModel.create({
-      ...board,
-      slug: slugify(board.title)
-    })
-
-    return await boardModel.find(createdBoard.insertedId)
+    return await boardModel.find(
+      (
+        await boardModel.create({
+          ...board,
+          slug: slugify(board.title)
+        })
+      ).insertedId
+    )
   } catch (error) {
     throw error
   }

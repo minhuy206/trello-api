@@ -3,9 +3,7 @@ import { boardService } from '~/services/boardService'
 
 const create = async (req, res, next) => {
   try {
-    const createdBoard = await boardService.create(req.body)
-
-    res.status(StatusCodes.CREATED).json(createdBoard)
+    res.status(StatusCodes.CREATED).json(await boardService.create(req.body))
   } catch (error) {
     next(error)
   }
@@ -13,11 +11,9 @@ const create = async (req, res, next) => {
 
 const getBoard = async (req, res, next) => {
   try {
-    const boardId = req.params.id
-
-    const board = await boardService.getBoard(boardId)
-
-    return res.status(StatusCodes.OK).json(board)
+    return res
+      .status(StatusCodes.OK)
+      .json(await boardService.getBoard(req.params.id))
   } catch (error) {
     next(error)
   }
@@ -25,11 +21,9 @@ const getBoard = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const boardId = req.params.id
-
-    const board = await boardService.update(boardId, req.body)
-
-    return res.status(StatusCodes.OK).json(board)
+    return res
+      .status(StatusCodes.OK)
+      .json(await boardService.update(req.params.id, req.body))
   } catch (error) {
     next(error)
   }
