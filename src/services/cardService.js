@@ -3,11 +3,13 @@ import { columnModel } from '~/models/columnModel'
 
 const create = async (card) => {
   try {
-    const createdCard = await cardModel.create({
-      ...card
-    })
-
-    const newCard = await cardModel.find(createdCard.insertedId)
+    const newCard = await cardModel.find(
+      (
+        await cardModel.create({
+          ...card
+        })
+      ).insertedId
+    )
 
     if (newCard) {
       await columnModel.updateCardOrderIds(newCard, '$push')

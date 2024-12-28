@@ -78,20 +78,14 @@ const update = async (userId, account) => {
   }
 }
 
-const find = async (userId, username = null, email = null) => {
+const find = async (field, value) => {
   try {
-    if (email) {
-      return await GET_DB()
-        .collection(USER_COLLECTION_NAME)
-        .findOne({ email: email })
-    } else if (username) {
-      return await GET_DB()
-        .collection(USER_COLLECTION_NAME)
-        .findOne({ username: username })
+    if (field === '_id') {
+      value = new ObjectId(value)
     }
     return await GET_DB()
       .collection(USER_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(userId) })
+      .findOne({ [field]: value })
   } catch (error) {
     throw new Error(error)
   }

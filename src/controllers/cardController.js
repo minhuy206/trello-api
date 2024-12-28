@@ -3,9 +3,7 @@ import { cardService } from '~/services/cardService'
 
 const create = async (req, res, next) => {
   try {
-    const createdCard = await cardService.create(req.body)
-
-    res.status(StatusCodes.CREATED).json(createdCard)
+    res.status(StatusCodes.CREATED).json(await cardService.create(req.body))
   } catch (error) {
     next(error)
   }
