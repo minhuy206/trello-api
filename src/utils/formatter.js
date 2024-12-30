@@ -26,3 +26,6 @@ export const pickUser = (user) => {
     'updatedAt'
   ])
 }
+
+export const cloudinarySecureUrl2PublicId = (folderName, secure_url) =>
+  `${folderName}${secure_url.split(folderName)[1].replace(/\.[^.]+$/, '')}`

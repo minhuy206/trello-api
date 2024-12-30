@@ -1,13 +1,14 @@
 import { StatusCodes } from 'http-status-codes'
-import { userModel } from '~/models/userModel'
-import ApiError from '~/utils/ApiError'
 import bcryptjs from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
-import { pickUser } from '~/utils/formatter'
-import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { NodemailerProvider } from '~/providers/NodemailerProvider'
-import { env } from '~/config/environment'
 import { JwtProvider } from '~/providers/JwtProvider'
+import { userModel } from '~/models/userModel'
+import ApiError from '~/utils/ApiError'
+import { cloudinarySecureUrl2PublicId, pickUser } from '~/utils/formatter'
+import { WEBSITE_DOMAIN } from '~/utils/constants'
+import { env } from '~/config/environment'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 
 const create = async ({ username, email, password }) => {
   try {
@@ -42,6 +43,30 @@ const create = async ({ username, email, password }) => {
     await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
 
     return pickUser(createdAccount)
+  } catch (error) {
+    throw error
+  }
+}
+
+const verify = async ({ email, token }) => {
+  try {
+    const existedUser = await userModel.find('email', email)
+
+    if (!existedUser)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    if (existedUser.isActive)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
+
+    if (existedUser.verifyToken !== token)
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
+
+    await userModel.update(existedUser._id, {
+      verifyToken: null,
+      isActive: true
+    })
+
+    return pickUser(existedUser)
   } catch (error) {
     throw error
   }
@@ -84,25 +109,61 @@ const login = async ({ username, password }) => {
   }
 }
 
-const verify = async ({ email, token }) => {
+const update = async (
+  id,
+  { displayName, currentPassword, newPassword },
+  avatar
+) => {
   try {
-    const existedUser = await userModel.find('email', email)
+    const user = await userModel.find('_id', id)
 
-    if (!existedUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!user.isActive)
+      throw new ApiError(
+        StatusCodes.NOT_ACCEPTABLE,
+        'Your account is not verified'
+      )
 
-    if (existedUser.isActive)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
+    const updateUser = {}
 
-    if (existedUser.verifyToken !== token)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
+    displayName && (updateUser.displayName = displayName)
+    avatar &&
+      (updateUser.avatar = await CloudinaryProvider.uploadImage(
+        avatar?.buffer,
+        env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME
+      ))?.secure_url
 
-    await userModel.update(existedUser._id, {
-      verifyToken: null,
-      isActive: true
-    })
+    if (currentPassword && newPassword) {
+      if (!bcryptjs.compareSync(currentPassword, user.password))
+        throw new ApiError(StatusCodes.UNAUTHORIZED, 'Incorrect password')
+      updateUser.password = bcryptjs.hashSync(newPassword, 8)
+    }
+    // if (avatar || avatar === '') {
+    //   updateUser.avatar =
+    //     avatar === ''
+    //       ? avatar
+    //       : (
+    //           await CloudinaryProvider.uploadImage(
+    //             avatar?.buffer,
+    //             env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME
+    //           )
+    //         )?.secure_url
+    // }
 
-    return pickUser(existedUser)
+    const updatedUser = await userModel.find(
+      '_id',
+      (
+        await userModel.update(user._id, updateUser)
+      )._id
+    )
+
+    await CloudinaryProvider.deleteImage(
+      cloudinarySecureUrl2PublicId(
+        env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME,
+        user.avatar
+      )
+    )
+    return pickUser(updatedUser)
   } catch (error) {
     throw error
   }
@@ -116,7 +177,7 @@ const refreshToken = async (refreshToken) => {
     )
 
     const accessToken = await JwtProvider.generateToken(
-      { id: refreshTokenDecoded._id, email: refreshTokenDecoded.email },
+      { id: refreshTokenDecoded.id, email: refreshTokenDecoded.email },
       env.ACCESS_TOKEN_PRIVATE_KEY,
       env.ACCESS_TOKEN_EXPIRES
     )
@@ -127,4 +188,4 @@ const refreshToken = async (refreshToken) => {
   }
 }
 
-export const userService = { create, login, verify, refreshToken }
+export const userService = { create, verify, login, update, refreshToken }

@@ -18,6 +18,7 @@ const isAuthorized = async (req, res, next) => {
       clientAccessToken,
       env.ACCESS_TOKEN_PRIVATE_KEY
     )
+
     req.jwtDecoded = accessTokenDecoded
     next()
   } catch (error) {

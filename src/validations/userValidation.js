@@ -35,6 +35,24 @@ const create = async (req, res, next) => {
   }
 }
 
+const verify = async (req, res, next) => {
+  const schema = Joi.object({
+    email: Joi.string()
+      .required()
+      .pattern(EMAIL_RULE)
+      .message(EMAIL_RULE_MESSAGE),
+    token: Joi.string().required()
+  })
+
+  try {
+    await schema.validateAsync(req.body)
+    next()
+  } catch (error) {
+    next()
+    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+  }
+}
+
 const login = async (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string()
@@ -56,26 +74,30 @@ const login = async (req, res, next) => {
   }
 }
 
-const verify = async (req, res, next) => {
+const update = async (req, res, next) => {
   const schema = Joi.object({
-    email: Joi.string()
+    displayName: Joi.string().trim().strict(),
+    currentPassword: Joi.string()
       .required()
-      .pattern(EMAIL_RULE)
-      .message(EMAIL_RULE_MESSAGE),
-    token: Joi.string().required()
+      .pattern(PASSWORD_RULE)
+      .message(PASSWORD_RULE_MESSAGE),
+    newPassword: Joi.string()
+      .required()
+      .pattern(PASSWORD_RULE)
+      .message(PASSWORD_RULE_MESSAGE)
   })
 
   try {
-    await schema.validateAsync(req.body)
+    await schema.validateAsync(req.body, { allowUnknown: true })
     next()
   } catch (error) {
     next()
     new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
   }
 }
-
 export const userValidation = {
   create,
+  verify,
   login,
-  verify
+  update
 }
