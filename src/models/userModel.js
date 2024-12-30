@@ -41,9 +41,7 @@ const USER_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'email', 'username', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
-  return await USER_COLLECTION_SCHEMA.validateAsync(data, {
-    abortEarly: false
-  })
+  return await USER_COLLECTION_SCHEMA.validateAsync(data)
 }
 
 const create = async (account) => {
@@ -62,6 +60,12 @@ const update = async (userId, account) => {
   try {
     Object.keys(account).forEach((key) => {
       if (INVALID_UPDATE_FIELDS.includes(key)) {
+        delete account[key]
+      }
+    })
+
+    Object.keys(account).forEach((key) => {
+      if (!account[key]) {
         delete account[key]
       }
     })

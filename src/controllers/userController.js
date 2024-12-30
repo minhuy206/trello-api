@@ -53,6 +53,16 @@ const logout = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  try {
+    res
+      .status(StatusCodes.OK)
+      .json(await userService.update(req.jwtDecoded.id, req.body, req.file))
+  } catch (error) {
+    next(error)
+  }
+}
+
 const refreshToken = async (req, res, next) => {
   try {
     const result = await userService.refreshToken(req.cookies?.refreshToken)
@@ -74,5 +84,6 @@ export const userController = {
   login,
   verify,
   logout,
+  update,
   refreshToken
 }
