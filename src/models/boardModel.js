@@ -5,6 +5,7 @@ import { OBJECT_ID_RULE } from '~/utils/validators'
 import { BOARD_TYPES } from '~/utils/constants'
 import { columnModel } from './columnModel'
 import { cardModel } from './cardModel'
+import { paginationSkipValue } from '~/utils/algorithms'
 
 const BOARD_COLLECTION_NAME = 'boards'
 const BOARD_COLLECTION_SCHEMA = Joi.object({
@@ -13,6 +14,10 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   description: Joi.string().required().min(1).max(256).trim().strict(),
   type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE).required(),
   columnOrderIds: Joi.array()
+    .items(Joi.string().pattern(OBJECT_ID_RULE))
+    .default([]),
+  ownerIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE)).default([]),
+  memberIds: Joi.array()
     .items(Joi.string().pattern(OBJECT_ID_RULE))
     .default([]),
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
@@ -35,6 +40,92 @@ const create = async (column) => {
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .insertOne(validatedColumn)
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const getBoard = async (boardId) => {
+  try {
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(boardId),
+            _destroy: false
+          }
+        },
+        {
+          $lookup: {
+            from: columnModel.COLUMN_COLLECTION_NAME,
+            localField: '_id',
+            foreignField: 'boardId',
+            as: 'columns'
+          }
+        },
+        {
+          $lookup: {
+            from: cardModel.CARD_COLLECTION_NAME,
+            localField: '_id',
+            foreignField: 'boardId',
+            as: 'cards'
+          }
+        }
+      ])
+      .toArray()
+
+    return result[0]
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const getBoards = async (userId, page, itemsPerPage) => {
+  try {
+    const res = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .aggregate(
+        [
+          {
+            $match: {
+              $and: [
+                { _destroy: false },
+                {
+                  $or: [
+                    { ownerIds: { $all: [new ObjectId(userId)] } },
+                    { memberIds: { $all: [new ObjectId(userId)] } }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            $sort: { title: 1 }
+          },
+          // facet để xử lý nhiều luồng trong một query
+          {
+            $facet: {
+              // Luồng 1: Query board
+              boards: [
+                { $skip: paginationSkipValue(page, itemsPerPage) }, // Bỏ qua số lượng bảng ghi của những trang page trước đó
+                { $limit: itemsPerPage }
+              ],
+
+              // Luồng 2: Query đếm tổng tất cả số lượng bản ghi boards trong DB và trả về biến totalBoards
+              totalBoards: [{ $count: 'totalBoards' }]
+            }
+          }
+        ],
+        // Chỉ định locale để sắp xếp chuỗi theo thứ tự bảng chữ cái tiếng Anh để fix chữ B trước a do sắp xếp theo bảng ASCII
+        { collation: { locale: 'en' } }
+      )
+      .toArray()
+
+    return {
+      boards: res[0].boards || [],
+      totalBoards: res[0].totalBoards[0]?.totalBoards || 0
+    }
   } catch (error) {
     throw new Error(error)
   }
@@ -77,42 +168,6 @@ const updateColumnOrderIds = async (column, operator) => {
   }
 }
 
-const getBoard = async (boardId) => {
-  try {
-    const result = await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
-      .aggregate([
-        {
-          $match: {
-            _id: new ObjectId(boardId),
-            _destroy: false
-          }
-        },
-        {
-          $lookup: {
-            from: columnModel.COLUMN_COLLECTION_NAME,
-            localField: '_id',
-            foreignField: 'boardId',
-            as: 'columns'
-          }
-        },
-        {
-          $lookup: {
-            from: cardModel.CARD_COLLECTION_NAME,
-            localField: '_id',
-            foreignField: 'boardId',
-            as: 'cards'
-          }
-        }
-      ])
-      .toArray()
-
-    return result[0]
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
 const find = async (boardId) => {
   try {
     return await GET_DB()
@@ -127,8 +182,9 @@ export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
   create,
+  getBoards,
+  getBoard,
   update,
   updateColumnOrderIds,
-  getBoard,
   find
 }
