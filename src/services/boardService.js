@@ -3,6 +3,7 @@ import { boardModel } from '~/models/boardModel'
 import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '~/utils/constants'
 
 const create = async (board) => {
   try {
@@ -13,6 +14,21 @@ const create = async (board) => {
           slug: slugify(board.title)
         })
       ).insertedId
+    )
+  } catch (error) {
+    throw error
+  }
+}
+
+const getBoards = async (
+  userId,
+  { page = DEFAULT_PAGE, itemsPerPge = DEFAULT_ITEMS_PER_PAGE }
+) => {
+  try {
+    return await boardModel.getBoards(
+      userId,
+      parseInt(page, 10),
+      parseInt(itemsPerPge, 10)
     )
   } catch (error) {
     throw error
@@ -51,6 +67,7 @@ const update = async (boardId, board) => {
 
 export const boardService = {
   create,
-  update,
-  getBoard
+  getBoards,
+  getBoard,
+  update
 }

@@ -9,6 +9,16 @@ const create = async (req, res, next) => {
   }
 }
 
+const getBoards = async (req, res, next) => {
+  try {
+    return res
+      .status(StatusCodes.OK)
+      .json(await boardService.getBoards(req.jwtDecoded.id, req.query))
+  } catch (error) {
+    next(error)
+  }
+}
+
 const getBoard = async (req, res, next) => {
   try {
     return res
@@ -31,6 +41,7 @@ const update = async (req, res, next) => {
 
 export const boardController = {
   create,
-  update,
-  getBoard
+  getBoards,
+  getBoard,
+  update
 }
