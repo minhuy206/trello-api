@@ -38,7 +38,6 @@ const update = async (req, res, next) => {
         .items(Joi.string().pattern(OBJECT_ID_RULE))
         .required()
     }),
-    cardId: Joi.string().pattern(OBJECT_ID_RULE)
   })
 
   try {
