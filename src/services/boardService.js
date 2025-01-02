@@ -5,11 +5,11 @@ import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '~/utils/constants'
 
-const create = async (board) => {
+const create = async (userId, board) => {
   try {
     return await boardModel.find(
       (
-        await boardModel.create({
+        await boardModel.create(userId, {
           ...board,
           slug: slugify(board.title)
         })
@@ -35,9 +35,9 @@ const getBoards = async (
   }
 }
 
-const getBoard = async (boardId) => {
+const getBoard = async (userId, boardId) => {
   try {
-    const board = await boardModel.getBoard(boardId)
+    const board = await boardModel.getBoard(userId, boardId)
     if (!board) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found')
     }

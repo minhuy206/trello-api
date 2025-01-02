@@ -27,17 +27,21 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   const schema = Joi.object({
+    title: Joi.string().min(1).max(50).trim().strict().messages({
+      'string.empty': 'Title is not allowed to be empty',
+      'string.min': 'Title must be at least 1 character',
+      'string.max': 'Title must be at most 50 characters',
+      'string.trim': 'Title must not have leading or trailing'
+    }),
     column: Joi.object({
       cardOrderIds: Joi.array()
         .items(Joi.string().pattern(OBJECT_ID_RULE))
         .required()
     }),
-    cardId: Joi.string().required().pattern(OBJECT_ID_RULE)
   })
 
   try {
     await schema.validateAsync(req.body, {
-      abortEarly: false,
       allowUnknown: true
     })
 
