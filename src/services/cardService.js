@@ -20,7 +20,17 @@ const create = async (card) => {
     throw error
   }
 }
-
+const update = async (cardId, card) => {
+  try {
+    return await cardModel.update(cardId, {
+      ...card,
+      updatedAt: Date.now()
+    })
+  } catch (error) {
+    throw error
+  }
+}
 export const cardService = {
-  create
+  create,
+  update
 }

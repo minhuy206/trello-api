@@ -33,27 +33,37 @@ const validateBeforeCreate = async (data) => {
   })
 }
 
-const create = async (column) => {
+const create = async (userId, board) => {
   try {
-    const validatedColumn = await validateBeforeCreate(column)
+    const validatedBoard = await validateBeforeCreate(board)
 
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
-      .insertOne(validatedColumn)
+      .insertOne({ ...validatedBoard, ownerIds: [new ObjectId(userId)] })
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const getBoard = async (boardId) => {
+const getBoard = async (userId, boardId) => {
   try {
     const result = await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .aggregate([
         {
           $match: {
-            _id: new ObjectId(boardId),
-            _destroy: false
+            $and: [
+              {
+                _id: new ObjectId(boardId)
+              },
+              { _destroy: false },
+              {
+                $or: [
+                  { ownerIds: { $all: [new ObjectId(userId)] } },
+                  { memberIds: { $all: [new ObjectId(userId)] } }
+                ]
+              }
+            ]
           }
         },
         {

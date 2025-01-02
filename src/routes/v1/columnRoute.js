@@ -10,6 +10,7 @@ Router.route('/').post(
   columnValidation.create,
   columnController.create
 )
+
 Router.route('/:id')
   .put(
     authMiddleware.isAuthorized,

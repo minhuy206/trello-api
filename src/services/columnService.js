@@ -25,13 +25,8 @@ const create = async (column) => {
   }
 }
 
-const update = async (columnId, { cardId, column }) => {
+const update = async (columnId, column) => {
   try {
-    await cardModel.update(cardId, {
-      columnId: columnId,
-      updatedAt: Date.now()
-    })
-
     return await columnModel.update(columnId, {
       ...column,
       updatedAt: Date.now()

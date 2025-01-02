@@ -9,6 +9,17 @@ const create = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  try {
+    return res
+      .status(StatusCodes.OK)
+      .json(await cardService.update(req.params.id, req.body))
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const cardController = {
-  create
+  create,
+  update
 }
