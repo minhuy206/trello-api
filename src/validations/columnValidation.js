@@ -16,7 +16,7 @@ const create = async (req, res, next) => {
   })
 
   try {
-    await schema.validateAsync(req.body, { abortEarly: false })
+    await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next(
@@ -37,7 +37,7 @@ const update = async (req, res, next) => {
       cardOrderIds: Joi.array()
         .items(Joi.string().pattern(OBJECT_ID_RULE))
         .required()
-    }),
+    })
   })
 
   try {

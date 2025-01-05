@@ -128,10 +128,12 @@ const update = async (
 
     displayName && (updateUser.displayName = displayName)
     avatar &&
-      (updateUser.avatar = await CloudinaryProvider.uploadImage(
-        avatar?.buffer,
-        env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME
-      ))?.secure_url
+      (updateUser.avatar = (
+        await CloudinaryProvider.uploadImage(
+          avatar?.buffer,
+          `${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`
+        )
+      )?.secure_url)
 
     if (currentPassword && newPassword) {
       if (!bcryptjs.compareSync(currentPassword, user.password))
@@ -153,16 +155,22 @@ const update = async (
     const updatedUser = await userModel.find(
       '_id',
       (
-        await userModel.update(user._id, updateUser)
+        await userModel.update(user._id, {
+          ...updateUser,
+          updatedAt: Date.now()
+        })
       )._id
     )
 
-    await CloudinaryProvider.deleteImage(
-      cloudinarySecureUrl2PublicId(
-        env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME,
-        user.avatar
+    if (user.avatar && avatar) {
+      await CloudinaryProvider.deleteImage(
+        cloudinarySecureUrl2PublicId(
+          `${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
+          user.avatar
+        )
       )
-    )
+    }
+
     return pickUser(updatedUser)
   } catch (error) {
     throw error

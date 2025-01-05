@@ -1,5 +1,8 @@
+import { env } from '~/config/environment'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 
 const create = async (card) => {
   try {
@@ -20,8 +23,43 @@ const create = async (card) => {
     throw error
   }
 }
-const update = async (cardId, card) => {
+const update = async (
+  cardId,
+  { id: userId, email: userEmail },
+  card,
+  cardCover
+) => {
   try {
+    const existedCard = await cardModel.find(cardId)
+
+    if (cardCover) {
+      card.cover = (
+        await CloudinaryProvider.uploadImage(
+          cardCover.buffer,
+          `${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`
+        )
+      )?.secure_url
+
+      existedCard.cover &&
+        (await CloudinaryProvider.deleteImage(
+          cloudinarySecureUrl2PublicId(
+            `${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`,
+            existedCard.cover
+          )
+        ))
+    }
+
+    if (card.comment) {
+      return await cardModel.unShiftComment(cardId, {
+        user: {
+          _id: userId,
+          email: userEmail,
+          ...card.comment.user
+        },
+        content: card.comment.content,
+        commentedAt: Date.now()
+      })
+    }
     return await cardModel.update(cardId, {
       ...card,
       updatedAt: Date.now()
