@@ -13,7 +13,14 @@ const update = async (req, res, next) => {
   try {
     return res
       .status(StatusCodes.OK)
-      .json(await cardService.update(req.params.id, req.body))
+      .json(
+        await cardService.update(
+          req.params.id,
+          req.jwtDecoded,
+          req.body,
+          req.file
+        )
+      )
   } catch (error) {
     next(error)
   }

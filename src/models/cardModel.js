@@ -1,7 +1,7 @@
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
-import { OBJECT_ID_RULE } from '~/utils/validators'
+import { EMAIL_RULE, OBJECT_ID_RULE, USERNAME_RULE } from '~/utils/validators'
 
 const CARD_COLLECTION_NAME = 'cards'
 const CARD_COLLECTION_SCHEMA = Joi.object({
@@ -9,6 +9,21 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
   title: Joi.string().required().min(1).max(50).trim().strict(),
   description: Joi.string().optional(),
+  cover: Joi.string().default(null),
+  memberIds: Joi.array()
+    .items(Joi.string().pattern(OBJECT_ID_RULE))
+    .default([]),
+  comments: Joi.array().items({
+    user: Joi.object({
+      _id: Joi.string().required().pattern(OBJECT_ID_RULE),
+      email: Joi.string().required().pattern(EMAIL_RULE),
+      username: Joi.string().required().pattern(USERNAME_RULE),
+      displayName: Joi.string().required().trim().strict(),
+      avatar: Joi.string().default(null)
+    }),
+    content: Joi.string(),
+    commentAt: Joi.date().timestamp() // Chỗ này lưu ý vì dùng hàm $push để thêm comment nên không set default là Date.now luôn giống hàm insertOne khi create đươc
+  }),
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -45,16 +60,28 @@ const update = async (cardId, card) => {
       }
     })
 
-    if (card.columnId) {
-      card.columnId = new ObjectId(card.columnId)
-    }
+    if (card.columnId) card.columnId = new ObjectId(card.columnId)
 
     return await GET_DB()
       .collection(CARD_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(cardId) },
         { $set: card },
-        { ReturnDocument: 'after' }
+        { returnDocument: 'after' }
+      )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const unShiftComment = async (cardId, comment) => {
+  try {
+    return await GET_DB()
+      .collection(CARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(cardId) },
+        { $push: { comments: { $each: [comment], $position: 0 } } },
+        { returnDocument: 'after' }
       )
   } catch (error) {
     throw new Error(error)
@@ -71,11 +98,11 @@ const deleteCards = async (columnId) => {
   }
 }
 
-const find = async (boardId) => {
+const find = async (cardId) => {
   try {
     return await GET_DB()
       .collection(CARD_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(boardId) })
+      .findOne({ _id: new ObjectId(cardId) })
   } catch (error) {
     throw new Error(error)
   }
@@ -86,6 +113,7 @@ export const cardModel = {
   CARD_COLLECTION_SCHEMA,
   create,
   update,
+  unShiftComment,
   deleteCards,
   find
 }

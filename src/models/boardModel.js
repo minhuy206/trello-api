@@ -2,10 +2,11 @@ import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
 import { OBJECT_ID_RULE } from '~/utils/validators'
-import { BOARD_TYPES } from '~/utils/constants'
+import { INVITATION_STATUS, BOARD_TYPES } from '~/utils/constants'
 import { columnModel } from './columnModel'
 import { cardModel } from './cardModel'
 import { paginationSkipValue } from '~/utils/algorithms'
+import { userModel } from './userModel'
 
 const BOARD_COLLECTION_NAME = 'boards'
 const BOARD_COLLECTION_SCHEMA = Joi.object({
@@ -20,6 +21,20 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   memberIds: Joi.array()
     .items(Joi.string().pattern(OBJECT_ID_RULE))
     .default([]),
+  invitation: Joi.array()
+    .items(
+      Joi.object({
+        inviterId: Joi.string().required().pattern(OBJECT_ID_RULE),
+        inviteeId: Joi.string().required().pattern(OBJECT_ID_RULE),
+        status: Joi.string()
+          .required()
+          .valid(...Object.values(INVITATION_STATUS)),
+        createdAt: Joi.date().timestamp('javascript').default(Date.now),
+        updatedAt: Joi.date().timestamp('javascript').default(null),
+        _destroy: Joi.boolean().default(false)
+      })
+    )
+    .optional(),
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -28,9 +43,7 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
-  return await BOARD_COLLECTION_SCHEMA.validateAsync(data, {
-    abortEarly: false
-  })
+  return await BOARD_COLLECTION_SCHEMA.validateAsync(data)
 }
 
 const create = async (userId, board) => {
@@ -40,52 +53,6 @@ const create = async (userId, board) => {
     return await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
       .insertOne({ ...validatedBoard, ownerIds: [new ObjectId(userId)] })
-  } catch (error) {
-    throw new Error(error)
-  }
-}
-
-const getBoard = async (userId, boardId) => {
-  try {
-    const result = await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
-      .aggregate([
-        {
-          $match: {
-            $and: [
-              {
-                _id: new ObjectId(boardId)
-              },
-              { _destroy: false },
-              {
-                $or: [
-                  { ownerIds: { $all: [new ObjectId(userId)] } },
-                  { memberIds: { $all: [new ObjectId(userId)] } }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          $lookup: {
-            from: columnModel.COLUMN_COLLECTION_NAME,
-            localField: '_id',
-            foreignField: 'boardId',
-            as: 'columns'
-          }
-        },
-        {
-          $lookup: {
-            from: cardModel.CARD_COLLECTION_NAME,
-            localField: '_id',
-            foreignField: 'boardId',
-            as: 'cards'
-          }
-        }
-      ])
-      .toArray()
-
-    return result[0]
   } catch (error) {
     throw new Error(error)
   }
@@ -136,6 +103,70 @@ const getBoards = async (userId, page, itemsPerPage) => {
       boards: res[0].boards || [],
       totalBoards: res[0].totalBoards[0]?.totalBoards || 0
     }
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const getBoard = async (userId, boardId) => {
+  try {
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                _id: new ObjectId(boardId)
+              },
+              { _destroy: false },
+              {
+                $or: [
+                  { ownerIds: { $all: [new ObjectId(userId)] } },
+                  { memberIds: { $all: [new ObjectId(userId)] } }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: columnModel.COLUMN_COLLECTION_NAME,
+            localField: '_id',
+            foreignField: 'boardId',
+            as: 'columns'
+          }
+        },
+        {
+          $lookup: {
+            from: cardModel.CARD_COLLECTION_NAME,
+            localField: '_id',
+            foreignField: 'boardId',
+            as: 'cards'
+          }
+        },
+        {
+          $lookup: {
+            from: userModel.USER_COLLECTION_NAME,
+            localField: 'ownerIds',
+            foreignField: '_id',
+            as: 'owners',
+            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+          }
+        },
+        {
+          $lookup: {
+            from: userModel.USER_COLLECTION_NAME,
+            localField: 'memberIds',
+            foreignField: '_id',
+            as: 'members',
+            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+          }
+        }
+      ])
+      .toArray()
+
+    return result[0]
   } catch (error) {
     throw new Error(error)
   }
