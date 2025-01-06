@@ -1,7 +1,9 @@
+import { ObjectId } from 'mongodb'
 import { env } from '~/config/environment'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import { CARD_MEMBER_ACTION } from '~/utils/constants'
 import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 
 const create = async (card) => {
@@ -23,6 +25,7 @@ const create = async (card) => {
     throw error
   }
 }
+
 const update = async (
   cardId,
   { id: userId, email: userEmail },
@@ -60,6 +63,24 @@ const update = async (
         commentedAt: Date.now()
       })
     }
+
+    if (card.updateCardMemberIdData) {
+      if (card.updateCardMemberIdData.action === CARD_MEMBER_ACTION.ADD) {
+        card.memberIds = [
+          ...existedCard.memberIds,
+          new ObjectId(card.updateCardMemberIdData.memberId)
+        ]
+      } else if (
+        card.updateCardMemberIdData.action === CARD_MEMBER_ACTION.REMOVE
+      ) {
+        card.memberIds = existedCard.memberIds.filter(
+          (memberId) =>
+            memberId.toString() !== card.updateCardMemberIdData.memberId
+        )
+      }
+      delete card.updateCardMemberIdData
+    }
+
     return await cardModel.update(cardId, {
       ...card,
       updatedAt: Date.now()

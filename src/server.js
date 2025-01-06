@@ -1,13 +1,17 @@
 /* eslint-disable no-console */
 import express from 'express'
 import cors from 'cors'
-import { corsOptions } from './config/cors'
-import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
 import exitHook from 'async-exit-hook'
+import cookieParser from 'cookie-parser'
+import http from 'http'
+import socketIo from 'socket.io'
+
+import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
+import { corsOptions } from './config/cors'
 import { env } from '~/config/environment'
 import { APIs_V1 } from '~/routes/v1'
 import { errorHandlingMiddleware } from './middlewares/errorHandlingMiddleware'
-import cookieParser from 'cookie-parser'
+import { inviteUserToBoardSocket } from './sockets/inviteUserToBoardSocket'
 
 const START_SERVER = () => {
   const app = express()
@@ -30,7 +34,20 @@ const START_SERVER = () => {
   // Middleware error handling
   app.use(errorHandlingMiddleware)
 
-  app.listen(env.APP_PORT, env.APP_HOST, () => {
+  // Tạo server bọc thằng app của express để làm real-time với socket.io
+  const server = http.createServer(app)
+
+  // Khởi tạo biến io với server và cors
+  const io = socketIo(server, {
+    cors: corsOptions
+  })
+
+  io.on('connection', (socket) => {
+    inviteUserToBoardSocket(socket)
+  })
+
+  // Dùng server.listen thay vì app.listen vì lúc này server đã bao gồm express app và đã config socket.io
+  server.listen(env.APP_PORT, env.APP_HOST, () => {
     console.log(
       `3. Hi ${env.AUTHOR}, server running at http://${env.APP_HOST}:${env.APP_PORT}/`
     )
