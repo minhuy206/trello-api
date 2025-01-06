@@ -1,10 +1,11 @@
+import { ObjectId } from 'mongodb'
+import { StatusCodes } from 'http-status-codes'
 import { boardModel } from '~/models/boardModel'
 import { userModel } from '~/models/userModel'
+import { invitationModel } from '~/models/invitationModel'
 import ApiError from '~/utils/ApiError'
-import { StatusCodes } from 'http-status-codes'
 import { INVITATION_STATUS } from '~/utils/constants'
 import { INVITATION_TYPES } from '~/utils/constants'
-import { invitationModel } from '~/models/invitationModel'
 import { pickUser } from '~/utils/formatter'
 
 const createBoardInvitation = async (boardId, { inviteeEmail }, userId) => {
@@ -23,7 +24,7 @@ const createBoardInvitation = async (boardId, { inviteeEmail }, userId) => {
           ? 'Inviter not found'
           : 'Board not found'
       )
-    } else if (board.memberIds.includes(invitee._id)) {
+    } else if (board.memberIds.toString().includes(invitee._id.toString())) {
       throw new ApiError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'Invitee is already a member of this board'
@@ -111,7 +112,7 @@ const updateInvitation = async (invitationId, userId, { status }) => {
       updatedInvitation.boardInvitation.status === INVITATION_STATUS.ACCEPTED
     ) {
       await boardModel.update(board._id, {
-        memberIds: [...board.memberIds, userId]
+        memberIds: [...board.memberIds, new ObjectId(userId)]
       })
     }
     return updatedInvitation
