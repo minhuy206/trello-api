@@ -22,13 +22,14 @@ const create = async (userId, board) => {
 
 const getBoards = async (
   userId,
-  { page = DEFAULT_PAGE, itemsPerPge = DEFAULT_ITEMS_PER_PAGE }
+  { page = DEFAULT_PAGE, itemsPerPge = DEFAULT_ITEMS_PER_PAGE, q }
 ) => {
   try {
     return await boardModel.getBoards(
       userId,
       parseInt(page, 10),
-      parseInt(itemsPerPge, 10)
+      parseInt(itemsPerPge, 10),
+      q
     )
   } catch (error) {
     throw error
