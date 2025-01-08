@@ -58,7 +58,21 @@ const create = async (userId, board) => {
   }
 }
 
-const getBoards = async (userId, page, itemsPerPage) => {
+const getBoards = async (userId, page, itemsPerPage, q) => {
+  const conditions = [
+    { _destroy: false },
+    {
+      $or: [
+        { ownerIds: { $all: [new ObjectId(userId)] } },
+        { memberIds: { $all: [new ObjectId(userId)] } }
+      ]
+    }
+  ]
+  if (q) {
+    Object.keys(q).forEach((key) => {
+      conditions.push({ [key]: { $regex: new RegExp(q[key], 'i') } })
+    })
+  }
   try {
     const res = await GET_DB()
       .collection(BOARD_COLLECTION_NAME)
@@ -66,15 +80,7 @@ const getBoards = async (userId, page, itemsPerPage) => {
         [
           {
             $match: {
-              $and: [
-                { _destroy: false },
-                {
-                  $or: [
-                    { ownerIds: { $all: [new ObjectId(userId)] } },
-                    { memberIds: { $all: [new ObjectId(userId)] } }
-                  ]
-                }
-              ]
+              $and: conditions
             }
           },
           {
