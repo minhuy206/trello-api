@@ -31,7 +31,6 @@ const USER_COLLECTION_SCHEMA = Joi.object({
     .default(USER_ROLES.CLIENT),
 
   isActive: Joi.boolean().default(false),
-  verifyToken: Joi.string(),
 
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
@@ -84,12 +83,9 @@ const update = async (userId, account) => {
 
 const find = async (field, value) => {
   try {
-    if (field === '_id') {
-      value = new ObjectId(value)
-    }
     return await GET_DB()
       .collection(USER_COLLECTION_NAME)
-      .findOne({ [field]: value })
+      .findOne({ [field]: field === '_id' ? new ObjectId(value) : value })
   } catch (error) {
     throw new Error(error)
   }

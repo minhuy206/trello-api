@@ -1,4 +1,3 @@
-import { slugify } from '~/utils/formatter'
 import { boardModel } from '~/models/boardModel'
 import ApiError from '~/utils/ApiError'
 import { StatusCodes } from 'http-status-codes'
@@ -10,8 +9,7 @@ const create = async (userId, board) => {
     return await boardModel.find(
       (
         await boardModel.create(userId, {
-          ...board,
-          slug: slugify(board.title)
+          ...board
         })
       ).insertedId
     )

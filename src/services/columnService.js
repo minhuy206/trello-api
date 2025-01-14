@@ -1,7 +1,9 @@
 import { StatusCodes } from 'http-status-codes'
+import { env } from '~/config/environment'
 import { boardModel } from '~/models/boardModel'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
+import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 
 const create = async (column) => {
@@ -46,6 +48,21 @@ const deleteColumn = async (columnId) => {
     await columnModel.deleteColumn(columnId)
     await cardModel.deleteCards(columnId)
     await boardModel.updateColumnOrderIds(targetColumn, '$pull')
+
+    await CloudinaryProvider.deleteImages(
+      `${env.PROJECT_NAME}/${
+        env.CLOUDINARY_BOARDS_COLLECTION_NAME
+      }/${targetColumn.boardId.toString()}/${
+        env.CLOUDINARY_COLUMNS_COLLECTION_NAME
+      }/${targetColumn._id.toString()}/`
+    )
+    await CloudinaryProvider.deleteFolder(
+      `${env.PROJECT_NAME}/${
+        env.CLOUDINARY_BOARDS_COLLECTION_NAME
+      }/${targetColumn.boardId.toString()}/${
+        env.CLOUDINARY_COLUMNS_COLLECTION_NAME
+      }/${targetColumn._id.toString()}/`
+    )
 
     return { result: 'Deleted' }
   } catch (error) {
