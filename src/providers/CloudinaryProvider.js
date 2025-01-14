@@ -28,4 +28,17 @@ const deleteImage = (publicId) => {
   cloudinary.uploader.destroy(publicId)
 }
 
-export const CloudinaryProvider = { uploadImage, deleteImage }
+const deleteImages = (prefix) => {
+  cloudinary.api.delete_resources_by_prefix(prefix)
+}
+
+const deleteFolder = (folderName) => {
+  cloudinary.api.delete_folder(folderName)
+}
+
+export const CloudinaryProvider = {
+  uploadImage,
+  deleteImage,
+  deleteImages,
+  deleteFolder
+}

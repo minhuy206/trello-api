@@ -1,14 +1,14 @@
 import { StatusCodes } from 'http-status-codes'
 import bcryptjs from 'bcryptjs'
-import { v4 as uuidv4 } from 'uuid'
 import { NodemailerProvider } from '~/providers/NodemailerProvider'
 import { JwtProvider } from '~/providers/JwtProvider'
 import { userModel } from '~/models/userModel'
 import ApiError from '~/utils/ApiError'
 import { cloudinarySecureUrl2PublicId, pickUser } from '~/utils/formatter'
-import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { env } from '~/config/environment'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import OtpGenerator from 'otp-generator'
+import { otpService } from './otpService'
 
 const create = async ({ username, email, password }) => {
   try {
@@ -23,6 +23,13 @@ const create = async ({ username, email, password }) => {
       throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
     }
 
+    let otp = OtpGenerator.generate(6, {
+      digits: true,
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false
+    })
+
     const createdAccount = await userModel.find(
       '_id',
       (
@@ -31,14 +38,31 @@ const create = async ({ username, email, password }) => {
           email,
           password: bcryptjs.hashSync(password, 8),
           displayName: username,
-          verifyToken: uuidv4()
+          isActive: (await otpService.create(otp, email)) && false
         })
       ).insertedId
     )
 
-    const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${createdAccount.email}&token=${createdAccount.verifyToken}`
     const customSubject = 'Please verify your email before using our services!'
-    const htmlContent = `<p>Hi ${createdAccount.username}!</p><p>Here is your verification link:</p><p>${verificationLink}</p><p>Sincerely, <br/>minhuy</p>`
+    const htmlContent = `
+    <div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">
+      <div style="margin:50px auto;width:70%;padding:20px 0">
+        <div style="border-bottom:1px solid #eee">
+          <a href="" style="font-size:1.4em;color: #512da8;text-decoration:none;font-weight:600">${env.AUTHOR}</a>
+        </div>
+        <p style="font-size:1.1em">Hi, ${createdAccount.username}</p>
+        <p>Thank you for register. Use the following OTP to complete your Sign Up procedures. OTP is valid for 5 minutes</p>
+        <h2 style="background: #512da8;margin: 0 auto;width: max-content;padding: 0 10px;color: #fff;border-radius: 4px;">${otp}</h2>
+        <p style="font-size:0.9em;">Regards,<br />${env.AUTHOR}</p>
+        <hr style="border:none;border-top:1px solid #eee" />
+        <div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">
+        <p>${env.AUTHOR}</p>
+        <p>Ho Chi Minh City</p>
+        <p>Vietnam</p>
+      </div>
+      </div>
+    </div>
+    `
 
     await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
 
@@ -48,7 +72,7 @@ const create = async ({ username, email, password }) => {
   }
 }
 
-const verify = async ({ email, token }) => {
+const verify = async ({ email, otp }) => {
   try {
     const existedUser = await userModel.find('email', email)
 
@@ -58,15 +82,61 @@ const verify = async ({ email, token }) => {
     if (existedUser.isActive)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
 
-    if (existedUser.verifyToken !== token)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token')
+    if (!(await otpService.verify(otp, email)))
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid OTP')
 
     await userModel.update(existedUser._id, {
-      verifyToken: null,
       isActive: true
     })
 
     return pickUser(existedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+const resendOtp = async ({ email }) => {
+  try {
+    const existedUser = await userModel.find('email', email)
+
+    if (!existedUser)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    if (existedUser.isActive)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
+
+    let otp = OtpGenerator.generate(6, {
+      digits: true,
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false
+    })
+
+    await otpService.create(otp, email)
+
+    const customSubject = 'Please verify your email before using our services!'
+    const htmlContent = `
+    <div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">
+      <div style="margin:50px auto;width:70%;padding:20px 0">
+        <div style="border-bottom:1px solid #eee">
+          <a href="" style="font-size:1.4em;color: #512da8;text-decoration:none;font-weight:600">${env.AUTHOR}</a>
+        </div>
+        <p style="font-size:1.1em">Hi, ${existedUser.username}</p>
+        <p>Thank you for register. Use the following OTP to complete your Sign Up procedures. OTP is valid for 5 minutes</p>
+        <h2 style="background: #512da8;margin: 0 auto;width: max-content;padding: 0 10px;color: #fff;border-radius: 4px;">${otp}</h2>
+        <p style="font-size:0.9em;">Regards,<br />${env.AUTHOR}</p>
+        <hr style="border:none;border-top:1px solid #eee" />
+        <div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">
+        <p>${env.AUTHOR}</p>
+        <p>Ho Chi Minh City</p>
+        <p>Vietnam</p>
+      </div>
+      </div>
+    </div>
+    `
+    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
+
+    return 'Sent'
   } catch (error) {
     throw error
   }
@@ -127,11 +197,12 @@ const update = async (
     const updateUser = {}
 
     displayName && (updateUser.displayName = displayName)
+
     avatar &&
       (updateUser.avatar = (
         await CloudinaryProvider.uploadImage(
           avatar?.buffer,
-          `${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`
+          `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`
         )
       )?.secure_url)
 
@@ -165,7 +236,7 @@ const update = async (
     if (user.avatar && avatar) {
       await CloudinaryProvider.deleteImage(
         cloudinarySecureUrl2PublicId(
-          `${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
+          `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
           user.avatar
         )
       )
@@ -196,4 +267,11 @@ const refreshToken = async (refreshToken) => {
   }
 }
 
-export const userService = { create, verify, login, update, refreshToken }
+export const userService = {
+  create,
+  verify,
+  resendOtp,
+  login,
+  update,
+  refreshToken
+}

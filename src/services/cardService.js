@@ -39,14 +39,14 @@ const update = async (
       card.cover = (
         await CloudinaryProvider.uploadImage(
           cardCover.buffer,
-          `${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`
+          `${env.PROJECT_NAME}/${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`
         )
       )?.secure_url
 
       existedCard.cover &&
         (await CloudinaryProvider.deleteImage(
           cloudinarySecureUrl2PublicId(
-            `${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`,
+            `${env.PROJECT_NAME}/${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`,
             existedCard.cover
           )
         ))

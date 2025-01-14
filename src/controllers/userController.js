@@ -43,6 +43,14 @@ const verify = async (req, res, next) => {
   }
 }
 
+const resendOtp = async (req, res, next) => {
+  try {
+    res.status(StatusCodes.OK).json(await userService.resendOtp(req.body))
+  } catch (error) {
+    next(error)
+  }
+}
+
 const logout = async (req, res, next) => {
   try {
     res.clearCookie('accessToken')
@@ -83,6 +91,7 @@ export const userController = {
   create,
   login,
   verify,
+  resendOtp,
   logout,
   update,
   refreshToken

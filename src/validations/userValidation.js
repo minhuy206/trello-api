@@ -7,7 +7,9 @@ import {
   EMAIL_RULE,
   EMAIL_RULE_MESSAGE,
   PASSWORD_RULE,
-  PASSWORD_RULE_MESSAGE
+  PASSWORD_RULE_MESSAGE,
+  OTP_RULE,
+  OTP_RULE_MESSAGE
 } from '~/utils/validators'
 
 const create = async (req, res, next) => {
@@ -41,7 +43,24 @@ const verify = async (req, res, next) => {
       .required()
       .pattern(EMAIL_RULE)
       .message(EMAIL_RULE_MESSAGE),
-    token: Joi.string().required()
+    otp: Joi.string().required().pattern(OTP_RULE).message(OTP_RULE_MESSAGE)
+  })
+
+  try {
+    await schema.validateAsync(req.body)
+    next()
+  } catch (error) {
+    next()
+    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+  }
+}
+
+const resendOtp = async (req, res, next) => {
+  const schema = Joi.object({
+    email: Joi.string()
+      .required()
+      .pattern(EMAIL_RULE)
+      .message(EMAIL_RULE_MESSAGE)
   })
 
   try {
@@ -98,6 +117,7 @@ const update = async (req, res, next) => {
 export const userValidation = {
   create,
   verify,
+  resendOtp,
   login,
   update
 }

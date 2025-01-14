@@ -2904,6 +2904,11 @@ optionator@^0.9.3:
     prelude-ls "^1.2.1"
     type-check "^0.4.0"
 
+otp-generator@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/otp-generator/-/otp-generator-4.0.1.tgz#ec6bb8d0d14c171318e8eb731fdfcd2dd1ad83e7"
+  integrity sha512-2TJ52vUftA0+J3eque4wwVtpaL4/NdIXDL0gFWFJFVUAZwAN7+9tltMhL7GCNYaHJtuONoier8Hayyj4HLbSag==
+
 p-limit@^2.0.0:
   version "2.3.0"
   resolved "https://registry.npmjs.org/p-limit/-/p-limit-2.3.0.tgz"
@@ -3619,11 +3624,6 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.1.tgz"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
-
-uuid@^9.0.1:
-  version "9.0.1"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-9.0.1.tgz"
-  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
 
 v8flags@^3.1.1:
   version "3.2.0"
