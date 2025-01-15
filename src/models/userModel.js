@@ -13,8 +13,8 @@ const USER_ROLES = {
   CLIENT: 'client'
 }
 
-const USER_COLLECTION_NAME = 'users'
-const USER_COLLECTION_SCHEMA = Joi.object({
+const USERS_COLLECTION_NAME = 'users'
+const USERS_COLLECTION_SCHEMA = Joi.object({
   email: Joi.string()
     .required()
     .pattern(EMAIL_RULE)
@@ -40,7 +40,7 @@ const USER_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'email', 'username', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
-  return await USER_COLLECTION_SCHEMA.validateAsync(data)
+  return await USERS_COLLECTION_SCHEMA.validateAsync(data)
 }
 
 const create = async (account) => {
@@ -48,7 +48,7 @@ const create = async (account) => {
     const validatedAccount = await validateBeforeCreate(account)
 
     return await GET_DB()
-      .collection(USER_COLLECTION_NAME)
+      .collection(USERS_COLLECTION_NAME)
       .insertOne(validatedAccount)
   } catch (error) {
     throw new Error(error)
@@ -70,7 +70,7 @@ const update = async (userId, account) => {
     })
 
     return await GET_DB()
-      .collection(USER_COLLECTION_NAME)
+      .collection(USERS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(userId) },
         { $set: account },
@@ -84,7 +84,7 @@ const update = async (userId, account) => {
 const find = async (field, value) => {
   try {
     return await GET_DB()
-      .collection(USER_COLLECTION_NAME)
+      .collection(USERS_COLLECTION_NAME)
       .findOne({ [field]: field === '_id' ? new ObjectId(value) : value })
   } catch (error) {
     throw new Error(error)
@@ -92,8 +92,8 @@ const find = async (field, value) => {
 }
 
 export const userModel = {
-  USER_COLLECTION_NAME,
-  USER_COLLECTION_SCHEMA,
+  USERS_COLLECTION_NAME,
+  USERS_COLLECTION_SCHEMA,
   create,
   update,
   find

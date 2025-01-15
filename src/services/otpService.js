@@ -1,5 +1,7 @@
 import bcryptjs from 'bcryptjs'
+import { StatusCodes } from 'http-status-codes'
 import { otpModel } from '~/models/otpModel'
+import ApiError from '~/utils/ApiError'
 
 const create = async (OTP, email) => {
   try {
@@ -16,15 +18,14 @@ const verify = async (OTP, email) => {
     const otps = await otpModel.find(email)
 
     if (!otps.length) {
-      return false
+      throw new ApiError(StatusCodes.NOT_FOUND, 'OTP not found')
     }
 
-    const result = bcryptjs.compareSync(OTP, otps[otps.length - 1].hashOtp)
-
-    if (result) {
-      await otpModel.deleteOtps(email)
-      return true
+    if (!bcryptjs.compareSync(OTP, otps[otps.length - 1].hashOtp)) {
+      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Invalid OTP')
     }
+    await otpModel.deleteOtps(email)
+    return true
   } catch (error) {
     throw error
   }

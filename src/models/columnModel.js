@@ -3,8 +3,8 @@ import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
 import { OBJECT_ID_RULE } from '~/utils/validators'
 
-const COLUMN_COLLECTION_NAME = 'columns'
-const COLUMN_COLLECTION_SCHEMA = Joi.object({
+const COLUMNS_COLLECTION_NAME = 'columns'
+const COLUMNS_COLLECTION_SCHEMA = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
   title: Joi.string().required().min(1).max(50).trim().strict(),
 
@@ -19,7 +19,7 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const validateBeforeCreate = async (column) => {
-  return await COLUMN_COLLECTION_SCHEMA.validateAsync(column, {
+  return await COLUMNS_COLLECTION_SCHEMA.validateAsync(column, {
     abortEarly: false
   })
 }
@@ -29,7 +29,7 @@ const create = async (column) => {
     const validatedColumn = await validateBeforeCreate(column)
 
     return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
+      .collection(COLUMNS_COLLECTION_NAME)
       .insertOne({
         ...validatedColumn,
         boardId: new ObjectId(validatedColumn.boardId)
@@ -51,7 +51,7 @@ const update = async (columnId, column) => {
       column.cardOrderIds = column.cardOrderIds.map((id) => new ObjectId(id))
 
     return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
+      .collection(COLUMNS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(columnId) },
         { $set: column },
@@ -65,7 +65,7 @@ const update = async (columnId, column) => {
 const deleteColumn = async (columnId) => {
   try {
     return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
+      .collection(COLUMNS_COLLECTION_NAME)
       .deleteOne({
         _id: new ObjectId(columnId)
       })
@@ -77,7 +77,7 @@ const deleteColumn = async (columnId) => {
 const find = async (columnId) => {
   try {
     return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
+      .collection(COLUMNS_COLLECTION_NAME)
       .findOne({ _id: new ObjectId(columnId) })
   } catch (error) {
     throw new Error(error)
@@ -87,7 +87,7 @@ const find = async (columnId) => {
 const updateCardOrderIds = async (card, operator) => {
   try {
     return await GET_DB()
-      .collection(COLUMN_COLLECTION_NAME)
+      .collection(COLUMNS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(card.columnId) },
         { [operator]: { cardOrderIds: new ObjectId(card._id) } },
@@ -99,8 +99,8 @@ const updateCardOrderIds = async (card, operator) => {
 }
 
 export const columnModel = {
-  COLUMN_COLLECTION_NAME,
-  COLUMN_COLLECTION_SCHEMA,
+  COLUMNS_COLLECTION_NAME,
+  COLUMNS_COLLECTION_SCHEMA,
   create,
   update,
   updateCardOrderIds,

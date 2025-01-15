@@ -97,7 +97,7 @@ const findByUser = async (userId) => {
         },
         {
           $lookup: {
-            from: boardModel.BOARD_COLLECTION_NAME,
+            from: boardModel.BOARDS_COLLECTION_NAME,
             localField: 'boardInvitation.boardId',
             foreignField: '_id',
             as: 'board'

@@ -3,15 +3,21 @@ import { GET_DB } from '~/config/mongodb'
 const Joi = require('joi')
 const { EMAIL_RULE, EMAIL_RULE_MESSAGE } = require('~/utils/validators')
 
-const OTP_COLLECTION_NAME = 'otp'
-const OTP_COLLECTION_SCHECMA = Joi.object({
+const OTPS_COLLECTION_NAME = 'otps'
+const OTPS_COLLECTION_SCHECMA = Joi.object({
   hashOtp: Joi.string().required(),
-  email: Joi.string().required().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE)
-  // createdAt: Joi.date().timestamp('javascript').default(Date.now)
+  email: Joi.string()
+    .required()
+    .pattern(EMAIL_RULE)
+    .message(EMAIL_RULE_MESSAGE),
+  createAt: Joi.date().timestamp('javascript').default(new Date()),
+  expiresAfter: Joi.date()
+    .timestamp('javascript')
+    .default(new Date(Date.now() + 300 * 1000))
 })
 
 const validateBeforeCreate = async (data) => {
-  return await OTP_COLLECTION_SCHECMA.validateAsync(data)
+  return await OTPS_COLLECTION_SCHECMA.validateAsync(data)
 }
 
 const create = async (hashOtp, email) => {
@@ -19,7 +25,7 @@ const create = async (hashOtp, email) => {
     const validatedOtp = await validateBeforeCreate({ hashOtp, email })
 
     return await GET_DB()
-      .collection(OTP_COLLECTION_NAME)
+      .collection(OTPS_COLLECTION_NAME)
       .insertOne(validatedOtp)
   } catch (error) {
     throw error
@@ -29,7 +35,7 @@ const create = async (hashOtp, email) => {
 const find = async (email) => {
   try {
     return await GET_DB()
-      .collection(OTP_COLLECTION_NAME)
+      .collection(OTPS_COLLECTION_NAME)
       .find({ email })
       .toArray()
   } catch (error) {
@@ -39,15 +45,15 @@ const find = async (email) => {
 
 const deleteOtps = async (email) => {
   try {
-    return await GET_DB().collection(OTP_COLLECTION_NAME).deleteMany({ email })
+    return await GET_DB().collection(OTPS_COLLECTION_NAME).deleteMany({ email })
   } catch (error) {
     throw error
   }
 }
 
 export const otpModel = {
-  OTP_COLLECTION_NAME,
-  OTP_COLLECTION_SCHECMA,
+  OTPS_COLLECTION_NAME,
+  OTPS_COLLECTION_SCHECMA,
   create,
   find,
   deleteOtps
