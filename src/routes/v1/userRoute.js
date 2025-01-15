@@ -9,9 +9,20 @@ const Router = express.Router()
 Router.route('/register').post(userValidation.create, userController.create)
 
 Router.route('/verify').post(userValidation.verify, userController.verify)
+
 Router.route('/resend-otp').post(
   userValidation.resendOtp,
   userController.resendOtp
+)
+
+Router.route('/forgot-password').post(
+  userValidation.forgotPassword,
+  userController.forgotPassword
+)
+
+Router.route('/reset-password').put(
+  userValidation.resetPassword,
+  userController.resetPassword
 )
 
 Router.route('/login').post(userValidation.login, userController.login)

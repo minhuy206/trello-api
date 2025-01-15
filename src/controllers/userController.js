@@ -37,7 +37,7 @@ const login = async (req, res, next) => {
 
 const verify = async (req, res, next) => {
   try {
-    res.status(StatusCodes.OK).json(await userService.verify(req.body))
+    res.status(StatusCodes.NO_CONTENT).json(await userService.verify(req.body))
   } catch (error) {
     next(error)
   }
@@ -45,7 +45,27 @@ const verify = async (req, res, next) => {
 
 const resendOtp = async (req, res, next) => {
   try {
-    res.status(StatusCodes.OK).json(await userService.resendOtp(req.body))
+    res.status(StatusCodes.ACCEPTED).json(await userService.resendOtp(req.body))
+  } catch (error) {
+    next(error)
+  }
+}
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    res
+      .status(StatusCodes.ACCEPTED)
+      .json(await userService.forgotPassword(req.body))
+  } catch (error) {
+    next(error)
+  }
+}
+
+const resetPassword = async (req, res, next) => {
+  try {
+    res
+      .status(StatusCodes.NO_CONTENT)
+      .json(await userService.resetPassword(req.body))
   } catch (error) {
     next(error)
   }
@@ -55,7 +75,7 @@ const logout = async (req, res, next) => {
   try {
     res.clearCookie('accessToken')
     res.clearCookie('refreshToken')
-    res.status(StatusCodes.OK).json({ loggedOut: true })
+    res.status(StatusCodes.NO_CONTENT).json({ loggedOut: true })
   } catch (error) {
     next(error)
   }
@@ -81,7 +101,7 @@ const refreshToken = async (req, res, next) => {
       maxAge: ms('14 days')
     })
 
-    res.status(StatusCodes.OK).json(result)
+    res.status(StatusCodes.NO_CONTENT).json(result)
   } catch (error) {
     next(new ApiError(StatusCodes.FORBIDDEN, 'Please login to continue'))
   }
@@ -92,6 +112,8 @@ export const userController = {
   login,
   verify,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   logout,
   update,
   refreshToken

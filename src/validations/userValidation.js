@@ -74,10 +74,47 @@ const resendOtp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   const schema = Joi.object({
+    email: Joi.string().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE),
+    username: Joi.string()
+      .pattern(USERNAME_RULE)
+      .message(USERNAME_RULE_MESSAGE),
+    password: Joi.string()
+      .required()
+      .pattern(PASSWORD_RULE)
+      .message(PASSWORD_RULE_MESSAGE)
+  }).xor('email', 'username')
+
+  try {
+    await schema.validateAsync(req.body)
+    next()
+  } catch (error) {
+    next()
+    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+  }
+}
+
+const forgotPassword = async (req, res, next) => {
+  const schema = Joi.object({
+    email: Joi.string().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE),
+    username: Joi.string().pattern(USERNAME_RULE).message(USERNAME_RULE_MESSAGE)
+  }).xor('email', 'username')
+
+  try {
+    await schema.validateAsync(req.body)
+    next()
+  } catch (error) {
+    next()
+    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+  }
+}
+
+const resetPassword = async (req, res, next) => {
+  const schema = Joi.object({
     email: Joi.string()
       .required()
       .pattern(EMAIL_RULE)
       .message(EMAIL_RULE_MESSAGE),
+    token: Joi.string().required(),
     password: Joi.string()
       .required()
       .pattern(PASSWORD_RULE)
@@ -118,6 +155,8 @@ export const userValidation = {
   create,
   verify,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   login,
   update
 }

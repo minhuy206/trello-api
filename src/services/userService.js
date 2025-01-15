@@ -9,6 +9,10 @@ import { env } from '~/config/environment'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 import OtpGenerator from 'otp-generator'
 import { otpService } from './otpService'
+import { WEBSITE_DOMAIN } from '~/utils/constants'
+import { v4 as uuid } from 'uuid'
+import { passwordResetModel } from '~/models/passwordResetModel'
+import { passwordResetService } from './passwordResetService'
 
 const create = async ({ username, email, password }) => {
   try {
@@ -61,8 +65,7 @@ const create = async ({ username, email, password }) => {
         <p>Vietnam</p>
       </div>
       </div>
-    </div>
-    `
+    </div>`
 
     await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
 
@@ -80,16 +83,14 @@ const verify = async ({ email, otp }) => {
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
 
     if (existedUser.isActive)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
+      throw new ApiError(StatusCodes.CONFLICT, 'User is already verified')
 
-    if (!(await otpService.verify(otp, email)))
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid OTP')
-
-    await userModel.update(existedUser._id, {
-      isActive: true
-    })
-
-    return pickUser(existedUser)
+    if (await otpService.verify(otp, email)) {
+      await userModel.update(existedUser._id, {
+        isActive: true
+      })
+      return StatusCodes.NO_CONTENT
+    }
   } catch (error) {
     throw error
   }
@@ -132,29 +133,28 @@ const resendOtp = async ({ email }) => {
         <p>Vietnam</p>
       </div>
       </div>
-    </div>
-    `
+    </div>`
     await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
 
-    return 'Sent'
+    return 'Sent OTP successfully'
   } catch (error) {
     throw error
   }
 }
 
-const login = async ({ username, password }) => {
+const login = async ({ username, email, password }) => {
   try {
-    const existedEmail = await userModel.find('email', username)
-    const existedUsername = await userModel.find('username', username)
+    const existedUser = await userModel.find(
+      username ? 'username' : 'email',
+      username ?? email
+    )
 
-    if (!existedEmail && !existedUsername) {
+    if (!existedUser) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
     }
 
-    const existedUser = existedEmail ?? existedUsername
-
     if (!existedUser.isActive) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'User is not verified')
+      throw new ApiError(StatusCodes.FORBIDDEN, 'User is not verified')
     }
 
     if (!bcryptjs.compareSync(password, existedUser.password)) {
@@ -179,6 +179,68 @@ const login = async ({ username, password }) => {
   }
 }
 
+const forgotPassword = async ({ email, username }) => {
+  try {
+    const existedUser = await userModel.find(
+      username ? 'username' : 'email',
+      username ?? email
+    )
+
+    if (!existedUser) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    const token = uuid()
+
+    await passwordResetModel.create(token, existedUser.email)
+
+    const resetPasswordLink = `${WEBSITE_DOMAIN}/reset-password?email=${existedUser.email}&token=${token}`
+    const htmlContent = `
+    <div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">
+      <div style="margin:50px auto;width:70%;padding:20px 0">
+        <div style="border-bottom:1px solid #eee">
+          <a href="" style="font-size:1.4em;color: #512da8;text-decoration:none;font-weight:600">${env.AUTHOR}</a>
+        </div>
+        <p style="font-size:1.1em">Hi, ${existedUser.username}</p>
+        <p>Here is your reset password link. Click the following URL bellow to reset your password. This is valid for 5 minutes</p>
+        <a href="${resetPasswordLink}">${resetPasswordLink}</a>
+        <p style="font-size:0.9em;">Regards,<br />${env.AUTHOR}</p>
+        <hr style="border:none;border-top:1px solid #eee" />
+        <div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">
+        <p>${env.AUTHOR}</p>
+        <p>Ho Chi Minh City</p>
+        <p>Vietnam</p>
+      </div>
+      </div>
+    </div>`
+    const customSubject = 'Reset your password!'
+    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
+    return 'Sent reset password link successfully'
+  } catch (error) {
+    throw error
+  }
+}
+
+const resetPassword = async ({ email, token, password }) => {
+  try {
+    const existedUser = await userModel.find('email', email)
+
+    if (!existedUser)
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+
+    if (await passwordResetService.verify(token, email)) {
+      return pickUser(
+        await userModel.update(existedUser._id, {
+          password: bcryptjs.hashSync(password, 8),
+          updatedAt: Date.now()
+        })
+      )
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
 const update = async (
   id,
   { displayName, currentPassword, newPassword },
@@ -189,10 +251,7 @@ const update = async (
 
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
     if (!user.isActive)
-      throw new ApiError(
-        StatusCodes.NOT_ACCEPTABLE,
-        'Your account is not verified'
-      )
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Your account is not verified')
 
     const updateUser = {}
 
@@ -271,6 +330,8 @@ export const userService = {
   create,
   verify,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   login,
   update,
   refreshToken

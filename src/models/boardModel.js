@@ -8,8 +8,8 @@ import { cardModel } from './cardModel'
 import { paginationSkipValue } from '~/utils/algorithms'
 import { userModel } from './userModel'
 
-const BOARD_COLLECTION_NAME = 'boards'
-const BOARD_COLLECTION_SCHEMA = Joi.object({
+const BOARDS_COLLECTION_NAME = 'boards'
+const BOARDS_COLLECTION_SCHEMA = Joi.object({
   title: Joi.string().required().min(3).max(50).trim().strict(),
   description: Joi.string().required().min(1).max(256).trim().strict(),
   type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE).required(),
@@ -42,7 +42,7 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
-  return await BOARD_COLLECTION_SCHEMA.validateAsync(data)
+  return await BOARDS_COLLECTION_SCHEMA.validateAsync(data)
 }
 
 const create = async (userId, board) => {
@@ -50,7 +50,7 @@ const create = async (userId, board) => {
     const validatedBoard = await validateBeforeCreate(board)
 
     return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .insertOne({ ...validatedBoard, ownerIds: [new ObjectId(userId)] })
   } catch (error) {
     throw new Error(error)
@@ -74,7 +74,7 @@ const getBoards = async (userId, page, itemsPerPage, q) => {
   }
   try {
     const res = await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .aggregate(
         [
           {
@@ -116,7 +116,7 @@ const getBoards = async (userId, page, itemsPerPage, q) => {
 const getBoard = async (userId, boardId) => {
   try {
     const result = await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .aggregate([
         {
           $match: {
@@ -136,7 +136,7 @@ const getBoard = async (userId, boardId) => {
         },
         {
           $lookup: {
-            from: columnModel.COLUMN_COLLECTION_NAME,
+            from: columnModel.COLUMNS_COLLECTION_NAME,
             localField: '_id',
             foreignField: 'boardId',
             as: 'columns'
@@ -144,7 +144,7 @@ const getBoard = async (userId, boardId) => {
         },
         {
           $lookup: {
-            from: cardModel.CARD_COLLECTION_NAME,
+            from: cardModel.CARDS_COLLECTION_NAME,
             localField: '_id',
             foreignField: 'boardId',
             as: 'cards'
@@ -189,7 +189,7 @@ const update = async (boardId, board) => {
       board.columnOrderIds = board.columnOrderIds.map((id) => new ObjectId(id))
 
     return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(boardId) },
         { $set: board },
@@ -203,7 +203,7 @@ const update = async (boardId, board) => {
 const updateColumnOrderIds = async (column, operator) => {
   try {
     return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(column.boardId) },
         { [operator]: { columnOrderIds: new ObjectId(column._id) } },
@@ -217,7 +217,7 @@ const updateColumnOrderIds = async (column, operator) => {
 const find = async (boardId) => {
   try {
     return await GET_DB()
-      .collection(BOARD_COLLECTION_NAME)
+      .collection(BOARDS_COLLECTION_NAME)
       .findOne({ _id: new ObjectId(boardId) })
   } catch (error) {
     throw new Error(error)
@@ -225,8 +225,8 @@ const find = async (boardId) => {
 }
 
 export const boardModel = {
-  BOARD_COLLECTION_NAME,
-  BOARD_COLLECTION_SCHEMA,
+  BOARDS_COLLECTION_NAME,
+  BOARDS_COLLECTION_SCHEMA,
   create,
   getBoards,
   getBoard,
