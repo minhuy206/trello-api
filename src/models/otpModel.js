@@ -10,8 +10,8 @@ const OTPS_COLLECTION_SCHECMA = Joi.object({
     .required()
     .pattern(EMAIL_RULE)
     .message(EMAIL_RULE_MESSAGE),
-  createAt: Joi.date().timestamp('javascript').default(new Date()),
-  expiresAfter: Joi.date()
+  createdAt: Joi.date().timestamp('javascript').default(new Date()),
+  expireAt: Joi.date()
     .timestamp('javascript')
     .default(new Date(Date.now() + 300 * 1000))
 })

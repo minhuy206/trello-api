@@ -55,7 +55,7 @@ const verify = async (req, res, next) => {
   }
 }
 
-const resendOtp = async (req, res, next) => {
+const sendOtp = async (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string()
       .required()
@@ -116,9 +116,9 @@ const resetPassword = async (req, res, next) => {
       .message(EMAIL_RULE_MESSAGE),
     token: Joi.string().required(),
     password: Joi.string()
-      .required()
       .pattern(PASSWORD_RULE)
       .message(PASSWORD_RULE_MESSAGE)
+      .required()
   })
 
   try {
@@ -154,7 +154,7 @@ const update = async (req, res, next) => {
 export const userValidation = {
   create,
   verify,
-  resendOtp,
+  sendOtp,
   forgotPassword,
   resetPassword,
   login,
