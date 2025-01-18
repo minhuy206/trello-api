@@ -30,7 +30,7 @@ const USERS_COLLECTION_SCHEMA = Joi.object({
     .valid(USER_ROLES.ADMIN, USER_ROLES.CLIENT)
     .default(USER_ROLES.CLIENT),
 
-  isActive: Joi.boolean().default(false),
+  isVerified: Joi.boolean().default(false),
 
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),

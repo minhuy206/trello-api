@@ -79,7 +79,7 @@ const findByUser = async (userId) => {
         },
         {
           $lookup: {
-            from: userModel.USER_COLLECTION_NAME,
+            from: userModel.USERS_COLLECTION_NAME,
             localField: 'inviterId',
             foreignField: '_id',
             as: 'inviter',
@@ -88,7 +88,7 @@ const findByUser = async (userId) => {
         },
         {
           $lookup: {
-            from: userModel.USER_COLLECTION_NAME,
+            from: userModel.USERS_COLLECTION_NAME,
             localField: 'inviteeId',
             foreignField: '_id',
             as: 'invitee',

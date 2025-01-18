@@ -152,7 +152,7 @@ const getBoard = async (userId, boardId) => {
         },
         {
           $lookup: {
-            from: userModel.USER_COLLECTION_NAME,
+            from: userModel.USERS_COLLECTION_NAME,
             localField: 'ownerIds',
             foreignField: '_id',
             as: 'owners',
@@ -161,7 +161,7 @@ const getBoard = async (userId, boardId) => {
         },
         {
           $lookup: {
-            from: userModel.USER_COLLECTION_NAME,
+            from: userModel.USERS_COLLECTION_NAME,
             localField: 'memberIds',
             foreignField: '_id',
             as: 'members',

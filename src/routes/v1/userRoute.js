@@ -8,12 +8,9 @@ const Router = express.Router()
 
 Router.route('/register').post(userValidation.create, userController.create)
 
-Router.route('/verify').post(userValidation.verify, userController.verify)
+Router.route('/verify').put(userValidation.verify, userController.verify)
 
-Router.route('/resend-otp').post(
-  userValidation.resendOtp,
-  userController.resendOtp
-)
+Router.route('/send-otp').post(userValidation.sendOtp, userController.sendOtp)
 
 Router.route('/forgot-password').post(
   userValidation.forgotPassword,

@@ -27,14 +27,7 @@ const create = async ({ username, email, password }) => {
       throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
     }
 
-    let otp = OtpGenerator.generate(6, {
-      digits: true,
-      lowerCaseAlphabets: false,
-      upperCaseAlphabets: false,
-      specialChars: false
-    })
-
-    const createdAccount = await userModel.find(
+    await userModel.find(
       '_id',
       (
         await userModel.create({
@@ -42,34 +35,12 @@ const create = async ({ username, email, password }) => {
           email,
           password: bcryptjs.hashSync(password, 8),
           displayName: username,
-          isActive: (await otpService.create(otp, email)) && false
+          isVerified: false
         })
       ).insertedId
     )
 
-    const customSubject = 'Please verify your email before using our services!'
-    const htmlContent = `
-    <div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">
-      <div style="margin:50px auto;width:70%;padding:20px 0">
-        <div style="border-bottom:1px solid #eee">
-          <a href="" style="font-size:1.4em;color: #512da8;text-decoration:none;font-weight:600">${env.AUTHOR}</a>
-        </div>
-        <p style="font-size:1.1em">Hi, ${createdAccount.username}</p>
-        <p>Thank you for register. Use the following OTP to complete your Sign Up procedures. OTP is valid for 5 minutes</p>
-        <h2 style="background: #512da8;margin: 0 auto;width: max-content;padding: 0 10px;color: #fff;border-radius: 4px;">${otp}</h2>
-        <p style="font-size:0.9em;">Regards,<br />${env.AUTHOR}</p>
-        <hr style="border:none;border-top:1px solid #eee" />
-        <div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">
-        <p>${env.AUTHOR}</p>
-        <p>Ho Chi Minh City</p>
-        <p>Vietnam</p>
-      </div>
-      </div>
-    </div>`
-
-    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
-
-    return pickUser(createdAccount)
+    return 'Account created'
   } catch (error) {
     throw error
   }
@@ -82,29 +53,30 @@ const verify = async ({ email, otp }) => {
     if (!existedUser)
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
 
-    if (existedUser.isActive)
+    if (existedUser.isVerified)
       throw new ApiError(StatusCodes.CONFLICT, 'User is already verified')
 
     if (await otpService.verify(otp, email)) {
-      await userModel.update(existedUser._id, {
-        isActive: true
-      })
-      return StatusCodes.NO_CONTENT
+      return pickUser(
+        await userModel.update(existedUser._id, {
+          isVerified: true
+        })
+      )
     }
   } catch (error) {
     throw error
   }
 }
 
-const resendOtp = async ({ email }) => {
+const sendOtp = async ({ email }) => {
   try {
     const existedUser = await userModel.find('email', email)
 
     if (!existedUser)
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
 
-    if (existedUser.isActive)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'User is already verified')
+    if (existedUser.isVerified)
+      throw new ApiError(StatusCodes.CONFLICT, 'User is already verified')
 
     let otp = OtpGenerator.generate(6, {
       digits: true,
@@ -134,9 +106,7 @@ const resendOtp = async ({ email }) => {
       </div>
       </div>
     </div>`
-    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
-
-    return 'Sent OTP successfully'
+    return await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
   } catch (error) {
     throw error
   }
@@ -151,10 +121,6 @@ const login = async ({ username, email, password }) => {
 
     if (!existedUser) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    }
-
-    if (!existedUser.isActive) {
-      throw new ApiError(StatusCodes.FORBIDDEN, 'User is not verified')
     }
 
     if (!bcryptjs.compareSync(password, existedUser.password)) {
@@ -202,7 +168,7 @@ const forgotPassword = async ({ email, username }) => {
           <a href="" style="font-size:1.4em;color: #512da8;text-decoration:none;font-weight:600">${env.AUTHOR}</a>
         </div>
         <p style="font-size:1.1em">Hi, ${existedUser.username}</p>
-        <p>Here is your reset password link. Click the following URL bellow to reset your password. This is valid for 5 minutes</p>
+        <p>Here is your reset password link. Click the following URL to reset your password. This link is valid for 5 minutes</p>
         <a href="${resetPasswordLink}">${resetPasswordLink}</a>
         <p style="font-size:0.9em;">Regards,<br />${env.AUTHOR}</p>
         <hr style="border:none;border-top:1px solid #eee" />
@@ -214,14 +180,17 @@ const forgotPassword = async ({ email, username }) => {
       </div>
     </div>`
     const customSubject = 'Reset your password!'
-    await NodemailerProvider.sendEmail(email, customSubject, htmlContent)
-    return 'Sent reset password link successfully'
+    return await NodemailerProvider.sendEmail(
+      existedUser.email,
+      customSubject,
+      htmlContent
+    )
   } catch (error) {
     throw error
   }
 }
 
-const resetPassword = async ({ email, token, password }) => {
+const resetPassword = async ({ email, password, token }) => {
   try {
     const existedUser = await userModel.find('email', email)
 
@@ -229,12 +198,10 @@ const resetPassword = async ({ email, token, password }) => {
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
 
     if (await passwordResetService.verify(token, email)) {
-      return pickUser(
-        await userModel.update(existedUser._id, {
-          password: bcryptjs.hashSync(password, 8),
-          updatedAt: Date.now()
-        })
-      )
+      await userModel.update(existedUser._id, {
+        password: bcryptjs.hashSync(password, 8),
+        updatedAt: Date.now()
+      })
     }
   } catch (error) {
     throw error
@@ -250,7 +217,7 @@ const update = async (
     const user = await userModel.find('_id', id)
 
     if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
-    if (!user.isActive)
+    if (!user.isVerified)
       throw new ApiError(StatusCodes.FORBIDDEN, 'Your account is not verified')
 
     const updateUser = {}
@@ -282,15 +249,10 @@ const update = async (
     //         )?.secure_url
     // }
 
-    const updatedUser = await userModel.find(
-      '_id',
-      (
-        await userModel.update(user._id, {
-          ...updateUser,
-          updatedAt: Date.now()
-        })
-      )._id
-    )
+    const updatedUser = await userModel.update(user._id, {
+      ...updateUser,
+      updatedAt: Date.now()
+    })
 
     if (user.avatar && avatar) {
       await CloudinaryProvider.deleteImage(
@@ -329,7 +291,7 @@ const refreshToken = async (refreshToken) => {
 export const userService = {
   create,
   verify,
-  resendOtp,
+  sendOtp,
   forgotPassword,
   resetPassword,
   login,

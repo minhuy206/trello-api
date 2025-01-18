@@ -10,7 +10,10 @@ const PASSWORD_RESETS_COLLECTION_SCHEMA = Joi.object({
     .required()
     .pattern(EMAIL_RULE)
     .message(EMAIL_RULE_MESSAGE),
-  createdAt: Joi.date().timestamp('javascript').default(new Date())
+  createdAt: Joi.date().timestamp('javascript').default(new Date()),
+  expireAt: Joi.date()
+    .timestamp('javascript')
+    .default(new Date(Date.now() + 300 * 1000))
 })
 
 const validateBeforeCreate = async (data) => {

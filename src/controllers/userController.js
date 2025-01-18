@@ -37,15 +37,15 @@ const login = async (req, res, next) => {
 
 const verify = async (req, res, next) => {
   try {
-    res.status(StatusCodes.NO_CONTENT).json(await userService.verify(req.body))
+    res.status(StatusCodes.ACCEPTED).json(await userService.verify(req.body))
   } catch (error) {
     next(error)
   }
 }
 
-const resendOtp = async (req, res, next) => {
+const sendOtp = async (req, res, next) => {
   try {
-    res.status(StatusCodes.ACCEPTED).json(await userService.resendOtp(req.body))
+    res.status(StatusCodes.ACCEPTED).json(await userService.sendOtp(req.body))
   } catch (error) {
     next(error)
   }
@@ -111,7 +111,7 @@ export const userController = {
   create,
   login,
   verify,
-  resendOtp,
+  sendOtp,
   forgotPassword,
   resetPassword,
   logout,

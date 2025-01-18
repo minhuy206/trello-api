@@ -9,7 +9,7 @@ export const pickUser = (user) => {
     'displayName',
     'avatar',
     'role',
-    'isActive',
+    'isVerified',
     'createdAt',
     'updatedAt'
   ])
