@@ -1,7 +1,9 @@
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
-import { EMAIL_RULE, OBJECT_ID_RULE, USERNAME_RULE } from '~/utils/validators'
+import { OBJECT_ID_RULE } from '~/utils/validators'
+import { commentModel } from './commentModel'
+import { userModel } from './userModel'
 
 const CARDS_COLLECTION_NAME = 'cards'
 const CARDS_COLLECTION_SCHEMA = Joi.object({
@@ -13,17 +15,9 @@ const CARDS_COLLECTION_SCHEMA = Joi.object({
   memberIds: Joi.array()
     .items(Joi.string().pattern(OBJECT_ID_RULE))
     .default([]),
-  comments: Joi.array().items({
-    user: Joi.object({
-      _id: Joi.string().required().pattern(OBJECT_ID_RULE),
-      email: Joi.string().required().pattern(EMAIL_RULE),
-      username: Joi.string().required().pattern(USERNAME_RULE),
-      displayName: Joi.string().required().trim().strict(),
-      avatar: Joi.string().default(null)
-    }),
-    content: Joi.string(),
-    commentAt: Joi.date().timestamp() // Chỗ này lưu ý vì dùng hàm $push để thêm comment nên không set default là Date.now luôn giống hàm insertOne khi create đươc
-  }),
+  commentIds: Joi.array()
+    .items(Joi.string().pattern(OBJECT_ID_RULE))
+    .default([]),
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
@@ -31,9 +25,40 @@ const CARDS_COLLECTION_SCHEMA = Joi.object({
 const INVALID_UPDATE_FIELDS = ['_id', 'createdAt']
 
 const validateBeforeCreate = async (card) => {
-  return await CARDS_COLLECTION_SCHEMA.validateAsync(card, {
-    abortEarly: true
-  })
+  return await CARDS_COLLECTION_SCHEMA.validateAsync(card)
+}
+
+const getCard = async (userId, cardId) => {
+  try {
+    const result = await GET_DB()
+      .collection(CARDS_COLLECTION_NAME)
+      .aggregate([
+        {
+          $match: { $and: [{ _id: new ObjectId(cardId) }, { _destroy: false }] }
+        },
+        {
+          $lookup: {
+            from: commentModel.COMMENTS_COLLECTION_NAME,
+            localField: 'commentIds',
+            foreignField: '_id',
+            as: 'comments'
+          }
+        },
+        {
+          $lookup: {
+            from: userModel.USERS_COLLECTION_NAME,
+            localField: 'comments.userId',
+            foreignField: '_id',
+            as: 'users',
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
+          }
+        }
+      ])
+      .toArray()
+    return result[0]
+  } catch (error) {
+    throw new Error(error)
+  }
 }
 
 const create = async (card) => {
@@ -74,13 +99,20 @@ const update = async (cardId, card) => {
   }
 }
 
-const unShiftComment = async (cardId, comment) => {
+const updateCommentIds = async (comment, operator) => {
   try {
     return await GET_DB()
       .collection(CARDS_COLLECTION_NAME)
       .findOneAndUpdate(
-        { _id: new ObjectId(cardId) },
-        { $push: { comments: { $each: [comment], $position: 0 } } },
+        { _id: new ObjectId(comment.cardId) },
+        {
+          [operator]: {
+            commentIds:
+              operator === '$push'
+                ? { $each: [new ObjectId(comment._id)], $position: 0 }
+                : new ObjectId(comment._id)
+          }
+        },
         { returnDocument: 'after' }
       )
   } catch (error) {
@@ -111,9 +143,10 @@ const find = async (cardId) => {
 export const cardModel = {
   CARDS_COLLECTION_NAME,
   CARDS_COLLECTION_SCHEMA,
+  getCard,
   create,
   update,
-  unShiftComment,
+  updateCommentIds,
   deleteCards,
   find
 }

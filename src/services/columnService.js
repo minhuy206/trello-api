@@ -3,6 +3,7 @@ import { env } from '~/config/environment'
 import { boardModel } from '~/models/boardModel'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
+import { commentModel } from '~/models/commentModel'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
 import ApiError from '~/utils/ApiError'
 
@@ -47,6 +48,8 @@ const deleteColumn = async (columnId) => {
 
     await columnModel.deleteColumn(columnId)
     await cardModel.deleteCards(columnId)
+    await commentModel.deleteComments('columnId', columnId)
+
     await boardModel.updateColumnOrderIds(targetColumn, '$pull')
 
     await CloudinaryProvider.deleteImages(

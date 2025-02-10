@@ -156,7 +156,7 @@ const getBoard = async (userId, boardId) => {
             localField: 'ownerIds',
             foreignField: '_id',
             as: 'owners',
-            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
           }
         },
         {
@@ -165,7 +165,7 @@ const getBoard = async (userId, boardId) => {
             localField: 'memberIds',
             foreignField: '_id',
             as: 'members',
-            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
           }
         }
       ])
