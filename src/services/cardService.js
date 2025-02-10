@@ -1,8 +1,11 @@
+import { StatusCodes } from 'http-status-codes'
+import { cloneDeep } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { env } from '~/config/environment'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
 import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import ApiError from '~/utils/ApiError'
 import { CARD_MEMBER_ACTION } from '~/utils/constants'
 import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 
@@ -26,12 +29,28 @@ const create = async (card) => {
   }
 }
 
-const update = async (
-  cardId,
-  { id: userId, email: userEmail },
-  card,
-  cardCover
-) => {
+const getCard = async (userId, cardId) => {
+  try {
+    const card = await cardModel.getCard(userId, cardId)
+    if (!card) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found')
+    }
+
+    const resCard = cloneDeep(card)
+    resCard.comments.forEach(
+      (comment) =>
+        (comment.user = resCard.users.find((user) =>
+          user._id.equals(comment.userId)
+        ))
+    )
+    delete resCard.users
+    return resCard
+  } catch (error) {
+    throw error
+  }
+}
+
+const update = async (cardId, card, cardCover) => {
   try {
     const existedCard = await cardModel.find(cardId)
 
@@ -50,18 +69,6 @@ const update = async (
             existedCard.cover
           )
         ))
-    }
-
-    if (card.comment) {
-      return await cardModel.unShiftComment(cardId, {
-        user: {
-          _id: userId,
-          email: userEmail,
-          ...card.comment.user
-        },
-        content: card.comment.content,
-        commentedAt: Date.now()
-      })
     }
 
     if (card.updateCardMemberIdData) {
@@ -89,7 +96,9 @@ const update = async (
     throw error
   }
 }
+
 export const cardService = {
   create,
+  getCard,
   update
 }

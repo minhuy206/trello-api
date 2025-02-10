@@ -83,7 +83,7 @@ const findByUser = async (userId) => {
             localField: 'inviterId',
             foreignField: '_id',
             as: 'inviter',
-            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
           }
         },
         {
@@ -92,7 +92,7 @@ const findByUser = async (userId) => {
             localField: 'inviteeId',
             foreignField: '_id',
             as: 'invitee',
-            pipeline: [{ $project: { password: 0, verifyToken: 0 } }]
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
           }
         },
         {

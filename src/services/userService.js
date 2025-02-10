@@ -271,7 +271,7 @@ const update = async (
 
 const refreshToken = async (refreshToken) => {
   try {
-    const refreshTokenDecoded = await JwtProvider.verifyToken(
+    const refreshTokenDecoded = await JwtProvider.isVerified(
       refreshToken,
       env.REFRESH_TOKEN_PRIVATE_KEY
     )

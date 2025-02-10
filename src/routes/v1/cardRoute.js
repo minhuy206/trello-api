@@ -12,11 +12,13 @@ Router.route('/').post(
   cardController.create
 )
 
-Router.route('/:id').put(
-  authMiddleware.isAuthorized,
-  multerUploadMiddleware.upload.single('cardCover'),
-  cardValidation.update,
-  cardController.update
-)
+Router.route('/:id')
+  .get(authMiddleware.isAuthorized, cardController.getCard)
+  .put(
+    authMiddleware.isAuthorized,
+    multerUploadMiddleware.upload.single('cardCover'),
+    cardValidation.update,
+    cardController.update
+  )
 
 export const cardRoute = Router

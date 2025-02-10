@@ -11,7 +11,7 @@ const generateToken = async (userInfo, privateKey, tokenLife) => {
   }
 }
 
-const verifyToken = async (token, privateKey) => {
+const isVerified = async (token, privateKey) => {
   try {
     return JWT.verify(token, privateKey)
   } catch (error) {
@@ -19,4 +19,4 @@ const verifyToken = async (token, privateKey) => {
   }
 }
 
-export const JwtProvider = { generateToken, verifyToken }
+export const JwtProvider = { generateToken, isVerified }
