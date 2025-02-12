@@ -5,8 +5,9 @@ import { OBJECT_ID_RULE } from '~/utils/validators'
 
 const COMMENTS_COLLECTION_NAME = 'comments'
 const COMMENTS_COLLECTION_SCHEMA = Joi.object({
-  cardId: Joi.string().required().pattern(OBJECT_ID_RULE),
+  boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
   columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
+  cardId: Joi.string().required().pattern(OBJECT_ID_RULE),
   userId: Joi.string().required().pattern(OBJECT_ID_RULE),
   content: Joi.string().required().min(1).max(500).trim().strict(),
   commentedAt: Joi.date().timestamp('javascript').default(Date.now)
@@ -24,8 +25,9 @@ const create = async (comment) => {
       .collection(COMMENTS_COLLECTION_NAME)
       .insertOne({
         ...validatedComment,
-        cardId: new ObjectId(validatedComment.cardId),
+        boardId: new ObjectId(validatedComment.boardId),
         columnId: new ObjectId(validatedComment.columnId),
+        cardId: new ObjectId(validatedComment.cardId),
         userId: new ObjectId(validatedComment.userId)
       })
   } catch (error) {

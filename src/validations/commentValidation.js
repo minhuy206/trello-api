@@ -12,8 +12,9 @@ const create = async (req, res, next) => {
       'string.max': 'Content must be at most 50 characters',
       'string.trim': 'Content must not have leading or trailing whitespace'
     }),
-    cardId: Joi.string().required().pattern(OBJECT_ID_RULE),
+    boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
     columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
+    cardId: Joi.string().required().pattern(OBJECT_ID_RULE),
     userId: Joi.string().required().pattern(OBJECT_ID_RULE)
   })
 

@@ -91,6 +91,16 @@ const update = async (req, res, next) => {
   }
 }
 
+const deleteAvatar = async (req, res, next) => {
+  try {
+    res
+      .status(StatusCodes.OK)
+      .json(await userService.deleteAvatar(req.jwtDecoded.id))
+  } catch (error) {
+    next(error)
+  }
+}
+
 const refreshToken = async (req, res, next) => {
   try {
     const result = await userService.refreshToken(req.cookies?.refreshToken)
@@ -116,5 +126,6 @@ export const userController = {
   resetPassword,
   logout,
   update,
+  deleteAvatar,
   refreshToken
 }

@@ -234,27 +234,16 @@ const update = async (
 
     if (currentPassword && newPassword) {
       if (!bcryptjs.compareSync(currentPassword, user.password))
-        throw new ApiError(StatusCodes.UNAUTHORIZED, 'Incorrect password')
+        throw new ApiError(StatusCodes.FORBIDDEN, 'Incorrect password')
       updateUser.password = bcryptjs.hashSync(newPassword, 8)
     }
-    // if (avatar || avatar === '') {
-    //   updateUser.avatar =
-    //     avatar === ''
-    //       ? avatar
-    //       : (
-    //           await CloudinaryProvider.uploadImage(
-    //             avatar?.buffer,
-    //             env.CLOUDINARY_USER_AVATAR_COLLECTION_NAME
-    //           )
-    //         )?.secure_url
-    // }
 
     const updatedUser = await userModel.update(user._id, {
       ...updateUser,
       updatedAt: Date.now()
     })
 
-    if (user.avatar && avatar) {
+    if (updatedUser.avatar && avatar && user.avatar) {
       await CloudinaryProvider.deleteImage(
         cloudinarySecureUrl2PublicId(
           `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
@@ -262,6 +251,33 @@ const update = async (
         )
       )
     }
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+const deleteAvatar = async (id) => {
+  try {
+    const user = await userModel.find('_id', id)
+
+    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!user.isVerified)
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Your account is not verified')
+
+    const updatedUser = await userModel.update(id, {
+      avatar: null,
+      updatedAt: Date.now()
+    })
+
+    updatedUser &&
+      (await CloudinaryProvider.deleteImage(
+        cloudinarySecureUrl2PublicId(
+          `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
+          user.avatar
+        )
+      ))
 
     return pickUser(updatedUser)
   } catch (error) {
@@ -296,5 +312,6 @@ export const userService = {
   resetPassword,
   login,
   update,
+  deleteAvatar,
   refreshToken
 }

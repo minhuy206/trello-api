@@ -144,13 +144,14 @@ const update = async (req, res, next) => {
   })
 
   try {
-    await schema.validateAsync(req.body, { allowUnknown: true })
+    await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
     new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
   }
 }
+
 export const userValidation = {
   create,
   verify,

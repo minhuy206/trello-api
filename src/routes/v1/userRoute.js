@@ -33,6 +33,11 @@ Router.route('/update').put(
   userController.update
 )
 
+Router.route('/delete-avatar').delete(
+  authMiddleware.isAuthorized,
+  userController.deleteAvatar
+)
+
 Router.route('/refresh-token').get(userController.refreshToken)
 
 export const userRoute = Router
