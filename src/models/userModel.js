@@ -63,12 +63,6 @@ const update = async (userId, account) => {
       }
     })
 
-    Object.keys(account).forEach((key) => {
-      if (!account[key]) {
-        delete account[key]
-      }
-    })
-
     return await GET_DB()
       .collection(USERS_COLLECTION_NAME)
       .findOneAndUpdate(
