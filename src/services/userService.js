@@ -1,33 +1,32 @@
 import { StatusCodes } from 'http-status-codes'
 import bcryptjs from 'bcryptjs'
-import { NodemailerProvider } from '~/providers/NodemailerProvider'
-import { JwtProvider } from '~/providers/JwtProvider'
+import { NodemailerProvider } from '~/providers/nodemailer.provider'
+import { JwtProvider } from '~/providers/jwt.provider'
 import { userModel } from '~/models/userModel'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { cloudinarySecureUrl2PublicId, pickUser } from '~/utils/formatter'
 import { env } from '~/config/environment'
-import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
+import { CloudinaryProvider } from '~/providers/cloudinary.provider'
 import OtpGenerator from 'otp-generator'
 import { otpService } from './otpService'
 import { WEBSITE_DOMAIN } from '~/utils/constants'
 import { v4 as uuid } from 'uuid'
-import { passwordResetModel } from '~/models/passwordResetModel'
 import { passwordResetService } from './passwordResetService'
 
-const create = async ({ username, email, password }) => {
+const register = async ({ username, email, password }) => {
   try {
     const existedUsername = await userModel.find('username', username)
 
     if (existedUsername) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Username already exists')
+      throw new CustomAPIError(StatusCodes.CONFLICT, 'Username already exists')
     }
     const existedEmail = await userModel.find('email', email)
 
     if (existedEmail) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
+      throw new CustomAPIError(StatusCodes.CONFLICT, 'Email already exists')
     }
 
-    await userModel.find(
+    const user = await userModel.find(
       '_id',
       (
         await userModel.create({
@@ -40,7 +39,7 @@ const create = async ({ username, email, password }) => {
       ).insertedId
     )
 
-    return 'Account created'
+    return user
   } catch (error) {
     throw error
   }
@@ -51,17 +50,19 @@ const verify = async ({ email, otp }) => {
     const existedUser = await userModel.find('email', email)
 
     if (!existedUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
 
     if (existedUser.isVerified)
-      throw new ApiError(StatusCodes.CONFLICT, 'User is already verified')
+      throw new CustomAPIError(StatusCodes.CONFLICT, 'User is already verified')
 
-    if (await otpService.verify(otp, email)) {
-      return pickUser(
-        await userModel.update(existedUser._id, {
+    if (await otpService.verify({ otp, email })) {
+      const [user] = await Promise.all([
+        userModel.update(existedUser._id, {
           isVerified: true
-        })
-      )
+        }),
+        otpService.deleteOtp(email)
+      ])
+      return pickUser(user)
     }
   } catch (error) {
     throw error
@@ -73,10 +74,10 @@ const sendOtp = async ({ email }) => {
     const existedUser = await userModel.find('email', email)
 
     if (!existedUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
 
     if (existedUser.isVerified)
-      throw new ApiError(StatusCodes.CONFLICT, 'User is already verified')
+      throw new CustomAPIError(StatusCodes.CONFLICT, 'User is already verified')
 
     let otp = OtpGenerator.generate(6, {
       digits: true,
@@ -114,17 +115,17 @@ const sendOtp = async ({ email }) => {
 
 const login = async ({ username, email, password }) => {
   try {
-    const existedUser = await userModel.find(
-      username ? 'username' : 'email',
-      username ?? email
+    const existedUser = await userModel.findUserByEmailOrUsername(
+      email,
+      username
     )
 
     if (!existedUser) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
     }
 
     if (!bcryptjs.compareSync(password, existedUser.password)) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Incorrect password')
+      throw new CustomAPIError(StatusCodes.UNAUTHORIZED, 'Incorrect password')
     }
 
     const accessToken = await JwtProvider.generateToken(
@@ -147,18 +148,18 @@ const login = async ({ username, email, password }) => {
 
 const forgotPassword = async ({ email, username }) => {
   try {
-    const existedUser = await userModel.find(
-      username ? 'username' : 'email',
-      username ?? email
+    const existedUser = await userModel.findUserByEmailOrUsername(
+      email,
+      username
     )
 
     if (!existedUser) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
     }
 
     const token = uuid()
 
-    await passwordResetModel.create(token, existedUser.email)
+    await passwordResetService.createOrUpdate(token, existedUser.email)
 
     const resetPasswordLink = `${WEBSITE_DOMAIN}/reset-password?email=${existedUser.email}&token=${token}`
     const htmlContent = `
@@ -195,13 +196,17 @@ const resetPassword = async ({ email, password, token }) => {
     const existedUser = await userModel.find('email', email)
 
     if (!existedUser)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
 
     if (await passwordResetService.verify(token, email)) {
-      await userModel.update(existedUser._id, {
-        password: bcryptjs.hashSync(password, 8),
-        updatedAt: Date.now()
-      })
+      const [updatedUser] = await Promise.all([
+        userModel.update(existedUser._id, {
+          password: bcryptjs.hashSync(password, 8)
+        }),
+        passwordResetService.deletePasswordReset(email)
+      ])
+
+      return pickUser(updatedUser)
     }
   } catch (error) {
     throw error
@@ -216,9 +221,12 @@ const update = async (
   try {
     const user = await userModel.find('_id', id)
 
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!user) throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
     if (!user.isVerified)
-      throw new ApiError(StatusCodes.FORBIDDEN, 'Your account is not verified')
+      throw new CustomAPIError(
+        StatusCodes.FORBIDDEN,
+        'Your account is not verified'
+      )
 
     const updateUser = {}
 
@@ -234,7 +242,7 @@ const update = async (
 
     if (currentPassword && newPassword) {
       if (!bcryptjs.compareSync(currentPassword, user.password))
-        throw new ApiError(StatusCodes.FORBIDDEN, 'Incorrect password')
+        throw new CustomAPIError(StatusCodes.FORBIDDEN, 'Incorrect password')
       updateUser.password = bcryptjs.hashSync(newPassword, 8)
     }
 
@@ -262,9 +270,13 @@ const deleteAvatar = async (id) => {
   try {
     const user = await userModel.find('_id', id)
 
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    if (!user) throw new CustomAPIError(StatusCodes.NOT_FOUND, 'User not found')
+
     if (!user.isVerified)
-      throw new ApiError(StatusCodes.FORBIDDEN, 'Your account is not verified')
+      throw new CustomAPIError(
+        StatusCodes.FORBIDDEN,
+        'Your account is not verified'
+      )
 
     const updatedUser = await userModel.update(id, {
       avatar: null,
@@ -305,7 +317,7 @@ const refreshToken = async (refreshToken) => {
 }
 
 export const userService = {
-  create,
+  register,
   verify,
   sendOtp,
   forgotPassword,

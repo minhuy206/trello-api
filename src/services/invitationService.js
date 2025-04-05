@@ -3,20 +3,24 @@ import { StatusCodes } from 'http-status-codes'
 import { boardModel } from '~/models/boardModel'
 import { userModel } from '~/models/userModel'
 import { invitationModel } from '~/models/invitationModel'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { INVITATION_STATUS } from '~/utils/constants'
-import { INVITATION_TYPES } from '~/utils/constants'
 import { pickUser } from '~/utils/formatter'
 
-const createBoardInvitation = async (boardId, { inviteeEmail }, userId) => {
+const createBoardInvitation = async ({
+  boardId,
+  body: { inviteeEmail },
+  userId
+}) => {
   try {
-    const inviter = await userModel.find('_id', userId)
-    const invitee = await userModel.find('email', inviteeEmail)
-
-    const board = await boardModel.find(boardId)
+    const [board, inviter, invitee] = await Promise.all([
+      boardModel.find(boardId),
+      userModel.find('_id', userId),
+      userModel.find('email', inviteeEmail)
+    ])
 
     if (!invitee || !inviter || !board) {
-      throw new ApiError(
+      throw new CustomAPIError(
         StatusCodes.NOT_FOUND,
         !invitee
           ? 'Invitee not found'
@@ -25,33 +29,30 @@ const createBoardInvitation = async (boardId, { inviteeEmail }, userId) => {
           : 'Board not found'
       )
     } else if (board.memberIds.toString().includes(invitee._id.toString())) {
-      throw new ApiError(
+      throw new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'Invitee is already a member of this board'
       )
     } else if (invitee._id.equals(userId)) {
-      throw new ApiError(
+      throw new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'You cannot invite yourself'
       )
     }
 
-    const resInvitation = await invitationModel.find(
+    const invitation = await invitationModel.find(
       (
         await invitationModel.createBoardInvitation({
-          inviterId: inviter._id.toString(),
+          inviterId: userId,
           inviteeId: invitee._id.toString(),
-          type: INVITATION_TYPES.BOARD_INVITATION,
-          boardInvitation: {
-            boardId: board._id.toString(),
-            status: INVITATION_STATUS.PENDING
-          }
+          boardId: boardId,
+          status: INVITATION_STATUS.PENDING
         })
       ).insertedId
     )
 
     return {
-      ...resInvitation,
+      ...invitation,
       board,
       inviter: pickUser(inviter),
       invitee: pickUser(invitee)
@@ -76,20 +77,20 @@ const getInvitations = async (userId) => {
   }
 }
 
-const updateInvitation = async (invitationId, userId, { status }) => {
+const updateInvitation = async ({ invitationId, userId, body }) => {
   try {
     const invitation = await invitationModel.find(invitationId)
     if (!invitation) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Invitation not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Invitation not found')
     }
 
-    const board = await boardModel.find(invitation.boardInvitation.boardId)
+    const board = await boardModel.find(invitation.boardId)
     if (!board) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Board not found')
     }
 
     if (!invitation.inviteeId.equals(userId)) {
-      throw new ApiError(
+      throw new CustomAPIError(
         StatusCodes.NOT_ACCEPTABLE,
         'You are not authorized to update this invitation'
       )
@@ -97,25 +98,34 @@ const updateInvitation = async (invitationId, userId, { status }) => {
 
     const boardUsers = [...board.ownerIds, ...board.memberIds].toString()
 
-    if (status === INVITATION_STATUS.ACCEPTED && boardUsers.includes(userId)) {
-      throw new ApiError(
+    if (
+      body.status === INVITATION_STATUS.ACCEPTED &&
+      boardUsers.includes(userId)
+    ) {
+      throw new CustomAPIError(
         StatusCodes.NOT_ACCEPTABLE,
         'You are already a member of this board'
       )
-    }
-
-    const updatedInvitation = await invitationModel.update(invitationId, {
-      boardInvitation: { ...invitation.boardInvitation, status }
-    })
-
-    if (
-      updatedInvitation.boardInvitation.status === INVITATION_STATUS.ACCEPTED
-    ) {
-      await boardModel.update(board._id, {
-        memberIds: [...board.memberIds, new ObjectId(userId)]
+    } else if (body.status === INVITATION_STATUS.ACCEPTED) {
+      return await Promise.all([
+        invitationModel.update(body, {
+          boardId: board._id,
+          inviteeId: userId,
+          status: INVITATION_STATUS.PENDING,
+          inviterId: invitation.inviterId
+        }),
+        boardModel.update(board._id, {
+          memberIds: [...board.memberIds, new ObjectId(userId)]
+        })
+      ])
+    } else if (body.status === INVITATION_STATUS.REJECTED) {
+      return await invitationModel.update(body, {
+        boardId: board._id,
+        inviteeId: userId,
+        status: INVITATION_STATUS.PENDING,
+        inviterId: invitation.inviterId
       })
     }
-    return updatedInvitation
   } catch (error) {
     throw error
   }

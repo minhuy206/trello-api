@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import multer from 'multer'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import {
   ALLOW_COMMON_FILE_TYPES,
   LIMIT_COMMON_FILE_SIZE
@@ -9,7 +9,7 @@ import {
 const customFileFilter = (req, file, callback) => {
   if (!ALLOW_COMMON_FILE_TYPES.includes(file.mimetype)) {
     return callback(
-      new ApiError(
+      new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'File type is invalid. Only accept jpg, jpeg and png'
       ),

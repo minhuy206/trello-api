@@ -1,6 +1,6 @@
 import { env } from '~/config/environment'
 import nodemailer from 'nodemailer'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { StatusCodes } from 'http-status-codes'
 
 const transporter = nodemailer.createTransport({
@@ -21,7 +21,10 @@ let sendEmail = async (recipientEmail, customSubject, htmlContent) => {
     html: htmlContent
   }))
     ? 'Sent'
-    : new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to send email')
+    : new CustomAPIError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to send email'
+      )
 }
 
 export const NodemailerProvider = {

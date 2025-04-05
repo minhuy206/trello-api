@@ -1,5 +1,5 @@
 import express from 'express'
-import { authMiddleware } from '~/middlewares/authMiddleware'
+import { authMiddleware } from '~/middlewares/auth.middleware'
 import { commentValidation } from '~/validations/commentValidation'
 import { commentController } from '~/controllers/commentController'
 

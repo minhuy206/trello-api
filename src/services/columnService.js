@@ -4,8 +4,8 @@ import { boardModel } from '~/models/boardModel'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
 import { commentModel } from '~/models/commentModel'
-import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
-import ApiError from '~/utils/ApiError'
+import { CloudinaryProvider } from '~/providers/cloudinary.provider'
+import CustomAPIError from '~/utils/CustomAPIError'
 
 const create = async (column) => {
   try {
@@ -43,31 +43,33 @@ const deleteColumn = async (columnId) => {
   try {
     const targetColumn = await columnModel.find(columnId)
     if (!targetColumn) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Column not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Column not found')
     }
 
-    await columnModel.deleteColumn(columnId)
-    await cardModel.deleteCards(columnId)
-    await commentModel.deleteComments('columnId', columnId)
+    const [, ,] = await Promise.all([
+      columnModel.deleteColumn(columnId),
+      cardModel.deleteCards(columnId),
+      commentModel.deleteComments('columnId', columnId),
 
-    await boardModel.updateColumnOrderIds(targetColumn, '$pull')
+      boardModel.updateColumnOrderIds(targetColumn, '$pull'),
 
-    await CloudinaryProvider.deleteImages(
-      `${env.PROJECT_NAME}/${
-        env.CLOUDINARY_BOARDS_COLLECTION_NAME
-      }/${targetColumn.boardId.toString()}/${
-        env.CLOUDINARY_COLUMNS_COLLECTION_NAME
-      }/${targetColumn._id.toString()}/`
-    )
-    await CloudinaryProvider.deleteFolder(
-      `${env.PROJECT_NAME}/${
-        env.CLOUDINARY_BOARDS_COLLECTION_NAME
-      }/${targetColumn.boardId.toString()}/${
-        env.CLOUDINARY_COLUMNS_COLLECTION_NAME
-      }/${targetColumn._id.toString()}/`
-    )
+      CloudinaryProvider.deleteImages(
+        `${env.PROJECT_NAME}/${
+          env.CLOUDINARY_BOARDS_COLLECTION_NAME
+        }/${targetColumn.boardId.toString()}/${
+          env.CLOUDINARY_COLUMNS_COLLECTION_NAME
+        }/${targetColumn._id.toString()}/`
+      ),
+      CloudinaryProvider.deleteFolder(
+        `${env.PROJECT_NAME}/${
+          env.CLOUDINARY_BOARDS_COLLECTION_NAME
+        }/${targetColumn.boardId.toString()}/${
+          env.CLOUDINARY_COLUMNS_COLLECTION_NAME
+        }/${targetColumn._id.toString()}/`
+      )
+    ])
 
-    return { result: 'Deleted' }
+    return { result: 'Deleted successfully' }
   } catch (error) {
     throw error
   }

@@ -4,8 +4,8 @@ import { ObjectId } from 'mongodb'
 import { env } from '~/config/environment'
 import { cardModel } from '~/models/cardModel'
 import { columnModel } from '~/models/columnModel'
-import { CloudinaryProvider } from '~/providers/CloudinaryProvider'
-import ApiError from '~/utils/ApiError'
+import { CloudinaryProvider } from '~/providers/cloudinary.provider'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { CARD_MEMBER_ACTION } from '~/utils/constants'
 import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 
@@ -33,7 +33,7 @@ const getCard = async (userId, cardId) => {
   try {
     const card = await cardModel.getCard(userId, cardId)
     if (!card) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Card not found')
     }
 
     const resCard = cloneDeep(card)
@@ -55,20 +55,20 @@ const update = async (cardId, card, cardCover) => {
     const existedCard = await cardModel.find(cardId)
 
     if (cardCover) {
-      card.cover = (
-        await CloudinaryProvider.uploadImage(
+      const [cover] = await Promise.all([
+        CloudinaryProvider.uploadImage(
           cardCover.buffer,
           `${env.PROJECT_NAME}/${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`
-        )
-      )?.secure_url
-
-      existedCard.cover &&
-        (await CloudinaryProvider.deleteImage(
-          cloudinarySecureUrl2PublicId(
-            `${env.PROJECT_NAME}/${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`,
-            existedCard.cover
+        ),
+        existedCard.cover &&
+          CloudinaryProvider.deleteImage(
+            cloudinarySecureUrl2PublicId(
+              `${env.PROJECT_NAME}/${env.CLOUDINARY_BOARDS_COLLECTION_NAME}/${existedCard.boardId}/${env.CLOUDINARY_COLUMNS_COLLECTION_NAME}/${existedCard.columnId}/${env.CLOUDINARY_CARDS_COLLECTION_NAME}/${cardId}/cover`,
+              existedCard.cover
+            )
           )
-        ))
+      ])
+      card.cover = cover.secure_url
     }
 
     if (card.updateCardMemberIdData) {

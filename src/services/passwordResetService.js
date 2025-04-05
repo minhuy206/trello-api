@@ -1,10 +1,10 @@
 import { StatusCodes } from 'http-status-codes'
 import { passwordResetModel } from '~/models/passwordResetModel'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 
-const create = async (token, email) => {
+const createOrUpdate = async (token, email) => {
   try {
-    return (await passwordResetModel.create(token, email)) ? 1 : 0
+    return (await passwordResetModel.createOrUpdate(token, email)) ? 1 : 0
   } catch (error) {
     throw error
   }
@@ -15,11 +15,11 @@ const verify = async (token, email) => {
     const passwordResets = await passwordResetModel.find(email)
 
     if (!passwordResets.length) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Token not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Token not found')
     }
 
     if (!(passwordResets[passwordResets.length - 1].token === token)) {
-      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Invalid token')
+      throw new CustomAPIError(StatusCodes.NOT_ACCEPTABLE, 'Invalid token')
     }
     await passwordResetModel.deletePasswordResets(email)
     return true
@@ -28,4 +28,16 @@ const verify = async (token, email) => {
   }
 }
 
-export const passwordResetService = { create, verify }
+const deletePasswordReset = async (email) => {
+  try {
+    return await passwordResetModel.deletePasswordResets(email)
+  } catch (error) {
+    throw error
+  }
+}
+
+export const passwordResetService = {
+  createOrUpdate,
+  verify,
+  deletePasswordReset
+}

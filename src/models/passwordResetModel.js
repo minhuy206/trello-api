@@ -20,7 +20,7 @@ const validateBeforeCreate = async (data) => {
   return await PASSWORD_RESETS_COLLECTION_SCHEMA.validateAsync(data)
 }
 
-const create = async (token, email) => {
+const createOrUpdate = async (token, email) => {
   try {
     const validatedPasswordReset = await validateBeforeCreate({
       token,
@@ -29,7 +29,7 @@ const create = async (token, email) => {
 
     return await GET_DB()
       .collection(PASSWORD_RESETS_COLLECTION_NAME)
-      .insertOne(validatedPasswordReset)
+      .updateOne({ email }, { $set: validatedPasswordReset }, { upsert: true })
   } catch (error) {
     throw error
   }
@@ -59,7 +59,7 @@ const deletePasswordResets = async (email) => {
 export const passwordResetModel = {
   PASSWORD_RESETS_COLLECTION_NAME,
   PASSWORD_RESETS_COLLECTION_SCHEMA,
-  create,
+  createOrUpdate,
   find,
   deletePasswordResets
 }

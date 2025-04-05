@@ -3,9 +3,9 @@ import ms from 'ms'
 import { userService } from '~/services/userService'
 import ApiError from '~/utils/ApiError'
 
-const create = async (req, res, next) => {
+const register = async (req, res, next) => {
   try {
-    res.status(StatusCodes.CREATED).json(await userService.create(req.body))
+    res.status(StatusCodes.CREATED).json(await userService.register(req.body))
   } catch (error) {
     next(error)
   }
@@ -118,7 +118,7 @@ const refreshToken = async (req, res, next) => {
 }
 
 export const userController = {
-  create,
+  register,
   login,
   verify,
   sendOtp,

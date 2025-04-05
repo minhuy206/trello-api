@@ -1,12 +1,13 @@
 import express from 'express'
-import { userValidation } from '~/validations/userValidation'
-import { userController } from '~/controllers/userController'
-import { authMiddleware } from '~/middlewares/authMiddleware'
-import { multerUploadMiddleware } from '~/middlewares/multerUploadMiddleware'
+
+import { authMiddleware } from '~/middlewares/auth.middleware'
+import { multerUploadMiddleware } from '~/middlewares/multerUpload.middleware'
+import { userValidation } from './users/user.validation'
+import { userController } from './users/user.controller'
 
 const Router = express.Router()
 
-Router.route('/register').post(userValidation.create, userController.create)
+Router.route('/register').post(userValidation.register, userController.register)
 
 Router.route('/verify').put(userValidation.verify, userController.verify)
 

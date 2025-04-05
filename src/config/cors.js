@@ -1,7 +1,7 @@
 import { WHITELIST_DOMAINS } from '~/utils/constants'
 import { env } from '~/config/environment'
 import { StatusCodes } from 'http-status-codes'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 
 export const corsOptions = {
   origin: function (origin, callback) {
@@ -16,7 +16,7 @@ export const corsOptions = {
     }
 
     return callback(
-      new ApiError(
+      new CustomAPIError(
         StatusCodes.FORBIDDEN,
         `${origin} not allowed by our CORS Policy.`
       )

@@ -85,10 +85,23 @@ const find = async (field, value) => {
   }
 }
 
+const findUserByEmailOrUsername = async (email, username) => {
+  try {
+    return await GET_DB()
+      .collection(USERS_COLLECTION_NAME)
+      .findOne({
+        $or: [{ email }, { username }]
+      })
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const userModel = {
   USERS_COLLECTION_NAME,
   USERS_COLLECTION_SCHEMA,
   create,
   update,
-  find
+  find,
+  findUserByEmailOrUsername
 }

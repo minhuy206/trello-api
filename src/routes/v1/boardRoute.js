@@ -1,7 +1,7 @@
 import express from 'express'
 import { boardValidation } from '~/validations/boardValidation'
 import { boardController } from '~/controllers/boardController'
-import { authMiddleware } from '~/middlewares/authMiddleware'
+import { authMiddleware } from '~/middlewares/auth.middleware'
 
 const Router = express.Router()
 

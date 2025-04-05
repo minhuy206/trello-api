@@ -1,15 +1,14 @@
 import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { OBJECT_ID_RULE } from '~/utils/validators'
 
 const create = async (req, res, next) => {
   const schema = Joi.object({
-    title: Joi.string().required().min(1).max(50).trim().strict().messages({
+    title: Joi.string().required().max(63).trim().strict().messages({
       'any.required': 'Title is required',
       'string.empty': 'Title is not allowed to be empty',
-      'string.min': 'Title must be at least 1 character',
-      'string.max': 'Title must be at most 50 characters',
+      'string.max': 'Title must be at most 63 characters',
       'string.trim': 'Title must not have leading or trailing whitespace'
     }),
     boardId: Joi.string().required().pattern(OBJECT_ID_RULE),
@@ -21,31 +20,34 @@ const create = async (req, res, next) => {
     next()
   } catch (error) {
     next(
-      new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+      new CustomAPIError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        new Error(error).message
+      )
     )
   }
 }
 
 const update = async (req, res, next) => {
   const schema = Joi.object({
-    title: Joi.string().min(1).max(50).trim().strict().messages({
+    title: Joi.string().max(50).trim().strict().messages({
       'string.empty': 'Title is not allowed to be empty',
-      'string.min': 'Title must be at least 1 character',
       'string.max': 'Title must be at most 50 characters',
       'string.trim': 'Title must not have leading or trailing'
     }),
     columnId: Joi.string().pattern(OBJECT_ID_RULE)
-  })
+  }).required()
 
   try {
-    await schema.validateAsync(req.body, {
-      allowUnknown: true
-    })
+    await schema.validateAsync(req.body)
 
     next()
   } catch (error) {
     next(
-      new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+      new CustomAPIError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        new Error(error).message
+      )
     )
   }
 }

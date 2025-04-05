@@ -20,13 +20,16 @@ const validateBeforeCreate = async (data) => {
   return await OTPS_COLLECTION_SCHECMA.validateAsync(data)
 }
 
-const create = async (hashOtp, email) => {
+const createOrUpdate = async (body) => {
   try {
-    const validatedOtp = await validateBeforeCreate({ hashOtp, email })
-
+    const validatedOtp = await validateBeforeCreate(body)
     return await GET_DB()
       .collection(OTPS_COLLECTION_NAME)
-      .insertOne(validatedOtp)
+      .updateOne(
+        { email: body.email },
+        { $set: validatedOtp },
+        { upsert: true }
+      )
   } catch (error) {
     throw error
   }
@@ -45,7 +48,7 @@ const find = async (email) => {
 
 const deleteOtps = async (email) => {
   try {
-    return await GET_DB().collection(OTPS_COLLECTION_NAME).deleteMany({ email })
+    return await GET_DB().collection(OTPS_COLLECTION_NAME).deleteO({ email })
   } catch (error) {
     throw error
   }
@@ -54,7 +57,7 @@ const deleteOtps = async (email) => {
 export const otpModel = {
   OTPS_COLLECTION_NAME,
   OTPS_COLLECTION_SCHECMA,
-  create,
+  createOrUpdate,
   find,
   deleteOtps
 }

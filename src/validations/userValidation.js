@@ -1,6 +1,6 @@
 import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import {
   USERNAME_RULE,
   USERNAME_RULE_MESSAGE,
@@ -12,7 +12,7 @@ import {
   OTP_RULE_MESSAGE
 } from '~/utils/validators'
 
-const create = async (req, res, next) => {
+const register = async (req, res, next) => {
   const schema = Joi.object({
     username: Joi.string()
       .required()
@@ -26,14 +26,17 @@ const create = async (req, res, next) => {
       .required()
       .pattern(PASSWORD_RULE)
       .message(PASSWORD_RULE_MESSAGE)
-  })
+  }).required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -44,14 +47,17 @@ const verify = async (req, res, next) => {
       .pattern(EMAIL_RULE)
       .message(EMAIL_RULE_MESSAGE),
     otp: Joi.string().required().pattern(OTP_RULE).message(OTP_RULE_MESSAGE)
-  })
+  }).required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -61,14 +67,17 @@ const sendOtp = async (req, res, next) => {
       .required()
       .pattern(EMAIL_RULE)
       .message(EMAIL_RULE_MESSAGE)
-  })
+  }).required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -82,14 +91,19 @@ const login = async (req, res, next) => {
       .required()
       .pattern(PASSWORD_RULE)
       .message(PASSWORD_RULE_MESSAGE)
-  }).xor('email', 'username')
+  })
+    .xor('email', 'username')
+    .required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -97,14 +111,20 @@ const forgotPassword = async (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE),
     username: Joi.string().pattern(USERNAME_RULE).message(USERNAME_RULE_MESSAGE)
-  }).xor('email', 'username')
+  })
+    .xor('email', 'username')
+    .message('Either email or username is required')
+    .required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -119,14 +139,17 @@ const resetPassword = async (req, res, next) => {
       .pattern(PASSWORD_RULE)
       .message(PASSWORD_RULE_MESSAGE)
       .required()
-  })
+  }).required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
@@ -141,19 +164,22 @@ const update = async (req, res, next) => {
       .required()
       .pattern(PASSWORD_RULE)
       .message(PASSWORD_RULE_MESSAGE)
-  })
+  }).required()
 
   try {
     await schema.validateAsync(req.body)
     next()
   } catch (error) {
     next()
-    new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, new Error(error).message)
+    new CustomAPIError(
+      StatusCodes.UNPROCESSABLE_ENTITY,
+      new Error(error).message
+    )
   }
 }
 
 export const userValidation = {
-  create,
+  register,
   verify,
   sendOtp,
   forgotPassword,

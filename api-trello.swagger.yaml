@@ -1,0 +1,1099 @@
+openapi: 3.0.4
+info:
+  title: Trello API Documentation
+  description: |-
+    This backend project is designed to support a Trello-like task management system, handling user authentication, board and list management, task assignments, and real-time updates.
+    Some useful links:
+    - [Trello API repository](https://github.com/minhuy206/trello-api)
+  contact:
+    email: forwork@minhuy.dev
+  version: 1.0.0
+servers:
+  - url: http://localhost:8017/v1
+    description: Local server
+  - url: https://api-trello.minhuy.dev/v1
+    description: Production server
+tags:
+  - name: User
+    description: User management, authentication, and authorization
+  - name: Board
+    description: Board management
+  - name: Column
+    description: Column management
+  - name: Card
+    description: Card management
+  - name: Comment
+    description: Comment management
+  - name: Invitation
+    description: Invitation management
+paths:
+  /users/register:
+    post:
+      tags:
+        - User
+      summary: Register a new user
+      description: Create a new user.
+      operationId: registerUser
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+        required: true
+      responses:
+        '201':
+          description: Register successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/login:
+    post:
+      tags:
+        - User
+      summary: Login a user
+      description: Login a user.
+      operationId: loginUser
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+        required: true
+      responses:
+        '201':
+          description: Login successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/logout:
+    post:
+      tags:
+        - User
+      summary: Logout a user
+      description: Logout a user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        '201':
+          description: Logout successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successfully
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /users/send-otp:
+    post:
+      tags:
+        - User
+      summary: Send OTP
+      description: Send OTP to the user. This could be used for registration.
+      operationId: sendOtp
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOTPBody"
+        required: true
+      responses:
+        '201':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OTP has been sent to your email    
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/refresh-token:
+    post:
+      tags:
+        - User
+      summary: Refresh access token
+      description: Refresh access token using refresh token.
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        '201':
+          description: Refresh token successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/forgot-password:
+    post:
+      tags:
+        - User
+      summary: Forgot password
+      description: Send an email to password.
+      operationId: forgotPassword
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+        required: true
+      responses:
+        '201':
+          description: An email has been sent to reset password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Reset password link has been sent to your email
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/reset-password:
+    post:
+      tags:
+        - User
+      summary: Reset password
+      description: Reset password using OTP.
+      operationId: resetPassword
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+        required: true
+      responses:
+        '201':
+          description: Password has been changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password has been changed successfully
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+  /users/verify:
+    put:
+      tags:
+        - User
+      summary: Verify user
+      description: Verify user with OTP.
+      operationId: verifyUser
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyBody"
+        required: true
+      responses:
+        '201':
+          description: User verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /boards:
+    get:
+      tags:
+        - Board
+      summary: Get all boards
+      description: Get all boards.
+      operationId: getAllBoards
+      parameters: []
+      responses:
+        '200':
+          description: Get all boards successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  boards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Board"
+                  totalBoards:
+                    type: integer
+                    example: 10
+      security:
+        - BearerAuth: []
+    post:
+      tags:
+        - Board
+      summary: Create a new board
+      description: Create a new board.
+      operationId: createBoard
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBoardBody"
+        required: true
+      responses:
+        '201':
+          description: Create board successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBoardResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /boards/{boardId}:
+    get:
+      tags:
+        - Board
+      summary: Get a board by boardId
+      description: Get a board by boardId.
+      operationId: getBoardById
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          description: The ID of the board to retrieve
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Get board successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Board"
+        '422':
+          description: Board not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+    put:
+      tags:
+        - Board
+      summary: Update a board by boardId
+      description: Update a board by boardId.
+      operationId: updateBoardById
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          description: The ID of the board to update
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBoardBody"
+        required: true
+      responses:
+        '201':
+          description: Update board successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBoardResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /columns:
+    post:
+      tags:
+        - Column
+      summary: Create a new column
+      description: Create a new column.
+      operationId: createColumn
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateColumnBody"
+        required: true
+      responses:
+        '201':
+          description: Create column successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateColumnResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /columns/{columnId}:
+    get:
+      tags:
+        - Column
+      summary: Get a column by columnId
+      description: Get a column by columnId.
+      operationId: getColumnById
+      parameters:
+        - name: columnId
+          in: path
+          required: true
+          description: The ID of the column to retrieve
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Get column successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Column"
+        '422':
+          description: Column not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+    # put:
+    #   tags:
+    #     - Column
+    #   summary: Update a column by columnId
+    #   description: Update a column by columnId.
+    #   operationId: updateColumnById
+    #   parameters:
+    #     - name: columnId
+    #       in: path
+    #       required: true
+    #       description: The ID of the column to update
+    #       schema:
+    #         type: string
+    #         format: ObjectId
+    #         example: 507f1f77bcf86cd799439011
+    #   requestBody:
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: "#/components/schemas/CreateColumnResponse"
+    #     required: true
+    #   responses:
+    #     '201':
+    #       description: Update column successfully
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/CreateColumnResponse"
+    #     '422':
+    #       description: Validation exception
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/UnprocessableEntityError"
+    #   security:
+    #     - BearerAuth: []
+    delete:
+      tags:
+        - Column
+      summary: Delete a column by columnId
+      description: Delete a column by columnId.
+      operationId: deleteColumnById
+      parameters:
+        - name: columnId
+          in: path
+          required: true
+          description: The ID of the column to delete
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Delete column successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Column deleted successfully
+        '422':
+          description: Column not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /cards:
+    post:
+      tags:
+        - Card
+      summary: Create a new card
+      description: Create a new card.
+      operationId: createCard
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCardBody"
+        required: true
+      responses:
+        '201':
+          description: Create card successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCardResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /cards/{cardId}:
+    get:
+      tags:
+        - Card
+      summary: Get a card by cardId
+      description: Get a card by cardId.
+      operationId: getCardById
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The ID of the card to retrieve
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Get card successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        '422':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+    # put:
+    #   tags:
+    #     - Card
+    #   summary: Update a card by cardId
+    #   description: Update a card by cardId.
+    #   operationId: updateCardById
+    #   parameters:
+    #     - name: cardId
+    #       in: path
+    #       required: true
+    #       description: The ID of the card to update
+    #       schema:
+    #         type: string
+    #         format: ObjectId
+    #         example: 507f1f77bcf86cd799439011
+    #   requestBody:
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: "#/components/schemas/CreateCardResponse"
+    #     required: true
+    #   responses:
+    #     '201':
+    #       description: Update card successfully
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/CreateCardResponse"
+    #     '422':
+    #       description: Validation exception
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/UnprocessableEntityError"
+    #   security:
+    #     - BearerAuth: []
+    delete:
+      tags:
+        - Card
+      summary: Delete a card by cardId
+      description: Delete a card by cardId.
+      operationId: deleteCardById
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The ID of the card to delete
+          schema:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Delete card successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Card deleted successfully
+        '422':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          example: email@example.com
+        username:
+          type: string
+          example: username
+        displayName:
+          type: string
+          example: 'Your display name'
+        avatar:
+          type: string
+          example: https://example.com/avatar.jpg
+        role:
+          $ref: "#/components/schemas/Role"
+        isVerified:
+          type: boolean
+          example: true   
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        _destroy:
+          type: boolean
+          example: false
+    RegisterBody: 
+      type: object
+      properties:
+        email:
+          type: string
+          example: email@example.com
+        username:
+          type: string
+          example: username
+        password:
+          type: string
+          example: '12345678a'
+        confirmPassword:
+          type: string
+          example: '12345678a'
+    LoginBody:
+      type: object
+      required:
+        - email | username
+        - password
+      properties:
+        email:
+          type: string
+          example: email@example.com
+        username:
+          type: string
+          example: username
+        password:
+          type: string
+          example: '12345678a'
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        refreshToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        user: 
+          $ref: "#/components/schemas/User"
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        refreshToken:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    VerifyBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: email@example.com
+        code:
+          type: string
+          example: '123456'
+    SendOTPBody:
+      type: object
+      properties:
+        email: 
+          type: string
+          example: email@example.com
+    ForgotPasswordBody: 
+      type: object
+      required:
+        - email | username
+      properties:
+        email:
+          type: string
+          example: email@example.com
+        username: 
+          type: string
+          example: username
+    ResetPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: '12345678a'
+        password:
+          type: string
+          example: '12345678a'
+        confirmPassword:
+          type: string
+          example: '12345678a'
+        token:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+    UpdateUserBody:
+        type: object
+        properties:
+          displayName:
+            type: string
+            example: 'Your display name'
+          currentPassword:
+            type: string
+            example: '12345678a'
+          newPassword:
+            type: string
+            example: '12345678a'
+    Board:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Board title'
+        description:
+          type: string
+          example: 'Board description'
+        type:
+          $ref: "#/components/schemas/BoardType"
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/Column"
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        _destroy:
+          type: boolean
+          example: false
+    CreateBoardBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Board title'
+        description:
+          type: string
+          example: 'Board description'
+        type:
+          $ref: "#/components/schemas/BoardType"
+    CreateBoardResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Board title'
+        description:
+          type: string
+          example: 'Board description'
+        type:
+          $ref: "#/components/schemas/BoardType"
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+        columnOrderIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        _destroy:
+          type: boolean
+          example: false
+    Column: 
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Column title'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+    CreateColumnBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Column title'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+    CreateColumnResponse: 
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Column title'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        cardOrderIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+    Card:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Card title'
+        description:
+          type: string
+          example: 'Card description'
+        cover:
+          type: string
+          example: 'https://example.com/cover.jpg'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        columnId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+    CreateCardBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Card title'
+        description:
+          type: string
+          example: 'Card description'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        columnId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+    CreateCardResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        title:
+          type: string
+          example: 'Card title'
+        description:
+          type: string
+          example: 'Card description'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        columnId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        cover:
+          type: string
+          example: 'https://example.com/cover.jpg'
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011        
+        commentIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 507f1f77bcf86cd799439011
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+    Comment:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        content:
+          type: string
+          example: 'Comment content'
+        cardId:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdById:
+          type: string
+          format: ObjectId
+          example: 507f1f77bcf86cd799439011
+        createdAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+        updatedAt:
+          type: string
+          format: ISO8601
+          example: '2023-10-01T12:00:00Z'
+    UnprocessableEntityError:
+        type: object
+        properties:
+          statusCode:
+            type: integer
+            format: int32
+            example: 422
+          message:
+            type: string
+            example: Validation error
+          error:
+            type: string
+            example: Unprocessable Entity
+    BoardType:
+      type: string
+      enum: [public, private]
+    Role:
+      type: string
+      enum: [admin, client]
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

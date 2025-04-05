@@ -1,5 +1,5 @@
 import { boardModel } from '~/models/boardModel'
-import ApiError from '~/utils/ApiError'
+import CustomAPIError from '~/utils/CustomAPIError'
 import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '~/utils/constants'
@@ -37,8 +37,9 @@ const getBoards = async (
 const getBoard = async (userId, boardId) => {
   try {
     const board = await boardModel.getBoard(userId, boardId)
+
     if (!board) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Board not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Board not found')
     }
 
     const resBoard = cloneDeep(board)
@@ -47,7 +48,6 @@ const getBoard = async (userId, boardId) => {
         (card) => card.columnId.equals(column._id) // Equals is a method supported by Mongodb to compare 2 ObjectId
       )
     })
-
     delete resBoard.cards
 
     return resBoard

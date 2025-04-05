@@ -1,32 +1,24 @@
 import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
-import { INVITATION_STATUS, INVITATION_TYPES } from '~/utils/constants'
+import { INVITATION_STATUS } from '~/utils/constants'
 import { OBJECT_ID_RULE } from '~/utils/validators'
 import { userModel } from './userModel'
 import { boardModel } from './boardModel'
+import { objectPropertiesStringId2ObjectId } from '~/utils/formatter'
 
 const INVITATION_COLLECTION_NAME = 'invitations'
 const INVITATION_SCHEMA = Joi.object({
   inviterId: Joi.string().pattern(OBJECT_ID_RULE).required(),
   inviteeId: Joi.string().pattern(OBJECT_ID_RULE).required(),
-  type: Joi.string().valid(...Object.values(INVITATION_TYPES)),
-  boardInvitation: Joi.object({
-    boardId: Joi.string().pattern(OBJECT_ID_RULE).required(),
-    status: Joi.string().valid(...Object.values(INVITATION_STATUS))
-  }).optional(),
+  boardId: Joi.string().pattern(OBJECT_ID_RULE).required(),
+  status: Joi.string()
+    .valid(...Object.values(INVITATION_STATUS))
+    .required(),
   createdAt: Joi.date().timestamp('javascript').default(Date.now()),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
-
-const INVALID_UPDATE_FIELDS = [
-  '_id',
-  'type',
-  'inviterId',
-  'inviteeId',
-  'createdAt'
-]
 
 const validateBeforeCreate = async (data) => {
   return await INVITATION_SCHEMA.validateAsync(data)
@@ -36,27 +28,9 @@ const createBoardInvitation = async (data) => {
   try {
     const validatedInvitation = await validateBeforeCreate(data)
 
-    if (validatedInvitation.boardInvitation) {
-      return await GET_DB()
-        .collection(INVITATION_COLLECTION_NAME)
-        .insertOne({
-          ...validatedInvitation,
-          inviterId: new ObjectId(validatedInvitation.inviterId),
-          inviteeId: new ObjectId(validatedInvitation.inviteeId),
-          boardInvitation: {
-            ...validatedInvitation.boardInvitation,
-            boardId: new ObjectId(validatedInvitation.boardInvitation.boardId)
-          }
-        })
-    }
-
     return await GET_DB()
       .collection(INVITATION_COLLECTION_NAME)
-      .insertOne({
-        ...validatedInvitation,
-        inviterId: new ObjectId(validatedInvitation.inviterId),
-        inviteeId: new ObjectId(validatedInvitation.inviteeId)
-      })
+      .insertOne(objectPropertiesStringId2ObjectId(validatedInvitation))
   } catch (error) {
     throw new Error(error)
   }
@@ -98,7 +72,7 @@ const findByUser = async (userId) => {
         {
           $lookup: {
             from: boardModel.BOARDS_COLLECTION_NAME,
-            localField: 'boardInvitation.boardId',
+            localField: 'boardId',
             foreignField: '_id',
             as: 'board'
           }
@@ -120,34 +94,32 @@ const find = async (invitationId) => {
   }
 }
 
-const update = async (invitationId, invitation) => {
+const update = async (body, filter) => {
   try {
-    Object.keys(invitation).forEach((key) => {
-      if (INVALID_UPDATE_FIELDS.includes(key)) {
-        delete invitation[key]
-      }
-    })
-
-    if (invitation.boardInvitation) {
-      invitation.boardInvitation = {
-        ...invitation.boardInvitation,
-        boardId: new ObjectId(invitation.boardInvitation.boardId)
-      }
-    }
-
     return await GET_DB()
       .collection(INVITATION_COLLECTION_NAME)
-      .findOneAndUpdate(
+      .updateOne(
+        objectPropertiesStringId2ObjectId(filter),
         {
-          _id: new ObjectId(invitationId)
-        },
-        {
-          $set: invitation
+          $set: {
+            ...body,
+            updatedAt: new Date()
+          }
         },
         {
           returnDocument: 'after'
         }
       )
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const deleteInvitation = async (uniqueObject) => {
+  try {
+    return await GET_DB()
+      .collection(INVITATION_COLLECTION_NAME)
+      .deleteOne(objectPropertiesStringId2ObjectId(uniqueObject))
   } catch (error) {
     throw new Error(error)
   }
@@ -159,5 +131,6 @@ export const invitationModel = {
   createBoardInvitation,
   find,
   findByUser,
-  update
+  update,
+  deleteInvitation
 }
