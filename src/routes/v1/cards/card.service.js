@@ -8,7 +8,7 @@ import { CARD_MEMBER_ACTION } from '~/utils/constants'
 import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 import { cardRepository } from './card.repo'
 import { columnRepository } from '../columns/column.repo'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 import { CardSchema } from './card.model'
 import { boardRepository } from '../boards/board.repo'
 import { commentRepository } from '../comments/comment.repo'
@@ -16,8 +16,8 @@ import { commentRepository } from '../comments/comment.repo'
 const create = async (userId, body) => {
   try {
     const [targetBoard, targetColumn] = await Promise.all([
-      boardRepository.find(body.boardId),
-      columnRepository.find(body.columnId)
+      boardRepository.find({ _id: body.boardId }),
+      columnRepository.find({ _id: body.columnId })
     ])
 
     if (!targetBoard) {
@@ -27,13 +27,13 @@ const create = async (userId, body) => {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Column not found')
     }
 
-    const newCard = await cardRepository.find(
-      (
+    const newCard = await cardRepository.find({
+      _id: (
         await cardRepository.create(
           await validateBody(CardSchema, { ...body, createdById: userId })
         )
       ).insertedId
-    )
+    })
 
     if (newCard) {
       await columnRepository.updateCardOrderIds(newCard, '$push')
@@ -68,7 +68,7 @@ const getCard = async (userId, cardId) => {
 
 const update = async (cardId, card, cardCover) => {
   try {
-    const existedCard = await cardRepository.find(cardId)
+    const existedCard = await cardRepository.find({ _id: cardId })
 
     if (cardCover) {
       const [cover] = await Promise.all([
@@ -104,7 +104,14 @@ const update = async (cardId, card, cardCover) => {
       delete card.updateCardMemberIdData
     }
 
-    return await cardRepository.update(cardId, {
+    if (existedCard.columnId !== card?.columnId) {
+      await commentRepository.updateComments(
+        { cardId },
+        { columnId: card.columnId }
+      )
+    }
+
+    return cardRepository.update(cardId, {
       ...card,
       updatedAt: Date.now()
     })
@@ -115,14 +122,14 @@ const update = async (cardId, card, cardCover) => {
 
 const deleteCard = async (cardId) => {
   try {
-    const targetCard = await cardRepository.find(cardId)
+    const targetCard = await cardRepository.find({ _id: cardId })
     if (!targetCard) {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Card not found')
     }
 
     const [, ,] = await Promise.all([
       cardRepository.deleteCard(cardId),
-      commentRepository.deleteComments('cardId', cardId),
+      commentRepository.deleteComments({ cardId }),
       columnRepository.updateCardOrderIds(targetCard, '$pull'),
       targetCard.cover &&
         CloudinaryProvider.deleteImages(

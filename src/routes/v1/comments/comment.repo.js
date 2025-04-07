@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb'
 import { env } from '~/config/environment'
 import { GET_DB } from '~/config/mongodb'
 import { objectPropertiesStringId2ObjectId } from '~/utils/formatter'
@@ -7,21 +6,19 @@ const create = (body) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
-      .insertOne({
-        ...objectPropertiesStringId2ObjectId(body)
-      })
+      .insertOne(objectPropertiesStringId2ObjectId(body))
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const update = (commentId, comment) => {
+const update = (filter, body) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
       .findOneAndUpdate(
-        { _id: new ObjectId(commentId) },
-        { $set: comment },
+        objectPropertiesStringId2ObjectId(filter),
+        { $set: objectPropertiesStringId2ObjectId(body) },
         { returnDocument: 'after' }
       )
   } catch (error) {
@@ -29,31 +26,43 @@ const update = (commentId, comment) => {
   }
 }
 
-const find = (commentId) => {
+const updateComments = (filter, update) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(commentId) })
+      .updateMany(objectPropertiesStringId2ObjectId(filter), {
+        $set: objectPropertiesStringId2ObjectId(update)
+      })
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const deleteComment = (commentId) => {
+const find = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
-      .deleteOne({ _id: new ObjectId(commentId) })
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }
 }
 
-const deleteComments = (field, fieldId) => {
+const deleteComment = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
-      .deleteMany({ [field]: new ObjectId(fieldId) })
+      .deleteOne(objectPropertiesStringId2ObjectId(filter))
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const deleteComments = (filter) => {
+  try {
+    return GET_DB()
+      .collection(env.MONGODB_COMMENTS_COLLECTION_NAME)
+      .deleteMany(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }
@@ -62,6 +71,7 @@ const deleteComments = (field, fieldId) => {
 export const commentRepository = {
   create,
   update,
+  updateComments,
   deleteComments,
   deleteComment,
   find

@@ -7,21 +7,21 @@ import { boardRepository } from '../boards/board.repo'
 import { cardRepository } from '../cards/card.repo'
 import { commentRepository } from '../comments/comment.repo'
 import { ColumnSchema } from './column.model'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 
 const create = async (userId, body) => {
   try {
-    const targetBoard = await boardRepository.find(body.boardId)
+    const targetBoard = await boardRepository.find({ _id: body.boardId })
     if (!targetBoard) {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Board not found')
     }
-    const newColumn = await columnRepository.find(
-      (
+    const newColumn = await columnRepository.find({
+      _id: (
         await columnRepository.create(
           await validateBody(ColumnSchema, { ...body, createdById: userId })
         )
       ).insertedId
-    )
+    })
 
     if (newColumn) {
       newColumn.cards = []
@@ -60,7 +60,7 @@ const getColumn = async (userId, columnId) => {
 
 const update = async (columnId, column) => {
   try {
-    const targetColumn = await columnRepository.find(columnId)
+    const targetColumn = await columnRepository.find({ _id: columnId })
     if (!targetColumn) {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Column not found')
     }
@@ -75,7 +75,7 @@ const update = async (columnId, column) => {
 
 const deleteColumn = async (columnId) => {
   try {
-    const targetColumn = await columnRepository.find(columnId)
+    const targetColumn = await columnRepository.find({ _id: columnId })
     if (!targetColumn) {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Column not found')
     }
@@ -83,7 +83,7 @@ const deleteColumn = async (columnId) => {
     const [, ,] = await Promise.all([
       columnRepository.deleteColumn(columnId),
       cardRepository.deleteCards(columnId),
-      commentRepository.deleteComments('columnId', columnId),
+      commentRepository.deleteComments({ columnId }),
       boardRepository.updateColumnOrderIds(targetColumn, '$pull'),
       CloudinaryProvider.deleteImages(
         `${env.PROJECT_NAME}/${

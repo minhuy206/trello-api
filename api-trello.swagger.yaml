@@ -66,7 +66,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginBody"
+              oneOf:
+                - $ref: "#/components/schemas/LoginBody1"
+                - $ref: "#/components/schemas/LoginBody2"
         required: true
       responses:
         '201':
@@ -169,6 +171,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - CookieAuth: []
   /users/forgot-password:
     post:
       tags:
@@ -320,7 +324,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
       responses:
         '200':
           description: Get board successfully
@@ -350,7 +354,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
       requestBody:
         content:
           application/json:
@@ -416,7 +420,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f3703cbbb8b004c7b4fa6a
       responses:
         '200':
           description: Get column successfully
@@ -432,42 +436,42 @@ paths:
                 $ref: "#/components/schemas/UnprocessableEntityError"
       security:
         - BearerAuth: []
-    # put:
-    #   tags:
-    #     - Column
-    #   summary: Update a column by columnId
-    #   description: Update a column by columnId.
-    #   operationId: updateColumnById
-    #   parameters:
-    #     - name: columnId
-    #       in: path
-    #       required: true
-    #       description: The ID of the column to update
-    #       schema:
-    #         type: string
-    #         format: ObjectId
-    #         example: 507f1f77bcf86cd799439011
-    #   requestBody:
-    #     content:
-    #       application/json:
-    #         schema:
-    #           $ref: "#/components/schemas/CreateColumnResponse"
-    #     required: true
-    #   responses:
-    #     '201':
-    #       description: Update column successfully
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/CreateColumnResponse"
-    #     '422':
-    #       description: Validation exception
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/UnprocessableEntityError"
-    #   security:
-    #     - BearerAuth: []
+    put:
+      tags:
+        - Column
+      summary: Update a column by columnId
+      description: Update a column by columnId.
+      operationId: updateColumnById
+      parameters:
+        - name: columnId
+          in: path
+          required: true
+          description: The ID of the column to update
+          schema:
+            type: string
+            format: ObjectId
+            example: 67f3703cbbb8b004c7b4fa6a
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateColumnBody"
+        required: true
+      responses:
+        '201':
+          description: Update column successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateColumnResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
     delete:
       tags:
         - Column
@@ -482,7 +486,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f3703cbbb8b004c7b4fa6a
       responses:
         '200':
           description: Delete column successfully
@@ -546,7 +550,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f371a10ae42f2e1870f71b
       responses:
         '200':
           description: Get card successfully
@@ -562,42 +566,42 @@ paths:
                 $ref: "#/components/schemas/UnprocessableEntityError"
       security:
         - BearerAuth: []
-    # put:
-    #   tags:
-    #     - Card
-    #   summary: Update a card by cardId
-    #   description: Update a card by cardId.
-    #   operationId: updateCardById
-    #   parameters:
-    #     - name: cardId
-    #       in: path
-    #       required: true
-    #       description: The ID of the card to update
-    #       schema:
-    #         type: string
-    #         format: ObjectId
-    #         example: 507f1f77bcf86cd799439011
-    #   requestBody:
-    #     content:
-    #       application/json:
-    #         schema:
-    #           $ref: "#/components/schemas/CreateCardResponse"
-    #     required: true
-    #   responses:
-    #     '201':
-    #       description: Update card successfully
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/CreateCardResponse"
-    #     '422':
-    #       description: Validation exception
-    #       content:
-    #         application/json:
-    #           schema:
-    #             $ref: "#/components/schemas/UnprocessableEntityError"
-    #   security:
-    #     - BearerAuth: []
+    put:
+      tags:
+        - Card
+      summary: Update a card by cardId
+      description: Update a card by cardId.
+      operationId: updateCardById
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          description: The ID of the card to update
+          schema:
+            type: string
+            format: ObjectId
+            example: 67f371a10ae42f2e1870f71b
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCardBody"
+        required: true
+      responses:
+        '201':
+          description: Update card successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCardResponse"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
     delete:
       tags:
         - Card
@@ -612,7 +616,7 @@ paths:
           schema:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f371a10ae42f2e1870f71b
       responses:
         '200':
           description: Delete card successfully
@@ -632,6 +636,226 @@ paths:
                 $ref: "#/components/schemas/UnprocessableEntityError"
       security:
         - BearerAuth: []
+  /comments:
+    post:
+      tags:
+        - Comment
+      summary: Create a new comment
+      description: Create a new comment.
+      operationId: createComment
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentBody"
+        required: true
+      responses:
+        '201':
+          description: Create comment successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /comments/{commentId}:
+    # get:
+    #   tags:
+    #     - Comment
+    #   summary: Get a comment by commentId
+    #   description: Get a comment by commentId.
+    #   operationId: getCommentById
+    #   parameters:
+    #     - name: commentId
+    #       in: path
+    #       required: true
+    #       description: The ID of the comment to retrieve
+    #       schema:
+    #         type: string
+    #         format: ObjectId
+    #         example: 67f3787c522940853216a1e5
+    #   responses:
+    #     '200':
+    #       description: Get comment successfully
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/Comment"
+    #     '422':
+    #       description: Comment not found
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/UnprocessableEntityError"
+    #   security:
+    #     - BearerAuth: []
+    put:
+      tags:
+        - Comment
+      summary: Update a comment by commentId
+      description: Update a comment by commentId.
+      operationId: updateCommentById
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          description: The ID of the comment to update
+          schema:
+            type: string
+            format: ObjectId
+            example: 67f3787c522940853216a1e5
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCommentBody"
+        required: true
+      responses:
+        '201':
+          description: Update comment successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+    delete:
+      tags:
+        - Comment
+      summary: Delete a comment by commentId
+      description: Delete a comment by commentId.
+      operationId: deleteCommentById
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          description: The ID of the comment to delete
+          schema:
+            type: string
+            format: ObjectId
+            example: 67f3787c522940853216a1e5
+      responses:
+        '200':
+          description: Delete comment successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Comment deleted successfully
+        '422':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+  /invitations:
+    post:
+      tags:
+        - Invitation
+      summary: Create a new invitation
+      description: Create a new invitation.
+      operationId: createInvitation
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvitationBody"
+        required: true
+      responses:
+        '201':
+          description: Create invitation successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
+    get:
+      tags:
+        - Invitation
+      summary: Get all invitations
+      description: Get all invitations.
+      operationId: getAllInvitations
+      parameters: []
+      responses:
+        '200':
+          description: Get all invitations successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invitation"
+                  totalInvitations:
+                    type: integer
+                    example: 10
+      security:
+        - BearerAuth: []
+  /invitations/{invitationId}:
+    put:
+      tags:
+        - Invitation
+      summary: Update an invitation by invitationId
+      description: Update an invitation by invitationId.
+      operationId: updateInvitationById
+      parameters:
+        - name: invitationId
+          in: path
+          required: true
+          description: The ID of the invitation to update
+          schema:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvitationBody"
+        required: true
+      responses:
+        '201':
+          description: Update invitation successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invitation"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
 components:
   schemas:
     User:
@@ -640,10 +864,10 @@ components:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         email:
           type: string
-          example: email@example.com
+          example: email@domain.com
         username:
           type: string
           example: username
@@ -674,7 +898,7 @@ components:
       properties:
         email:
           type: string
-          example: email@example.com
+          example: email@domain.com
         username:
           type: string
           example: username
@@ -684,7 +908,7 @@ components:
         confirmPassword:
           type: string
           example: '12345678a'
-    LoginBody:
+    LoginBody1:
       type: object
       required:
         - email | username
@@ -692,7 +916,16 @@ components:
       properties:
         email:
           type: string
-          example: email@example.com
+          example: email@domain.com
+        password:
+          type: string
+          example: '12345678a'
+    LoginBody2:
+      type: object
+      required:
+        - email | username
+        - password
+      properties:
         username:
           type: string
           example: username
@@ -724,8 +957,8 @@ components:
       properties:
         email:
           type: string
-          example: email@example.com
-        code:
+          example: email@domain.com
+        otp:
           type: string
           example: '123456'
     SendOTPBody:
@@ -733,7 +966,7 @@ components:
       properties:
         email: 
           type: string
-          example: email@example.com
+          example: email@domain.com
     ForgotPasswordBody: 
       type: object
       required:
@@ -741,7 +974,7 @@ components:
       properties:
         email:
           type: string
-          example: email@example.com
+          example: email@domain.com
         username: 
           type: string
           example: username
@@ -779,7 +1012,7 @@ components:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         title:
           type: string
           example: 'Board title'
@@ -793,7 +1026,7 @@ components:
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
         columns:
           type: array
           items:
@@ -801,7 +1034,7 @@ components:
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -830,7 +1063,7 @@ components:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         title:
           type: string
           example: 'Board title'
@@ -844,17 +1077,17 @@ components:
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
         columnOrderIds:
           type: array
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -866,20 +1099,37 @@ components:
         _destroy:
           type: boolean
           example: false
+    UpdateBoardBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Board title'
+        description:
+          type: string
+          example: 'Board description'
+        type:
+          $ref: "#/components/schemas/BoardType"
+        columnOrderIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
     Column: 
       type: object
       properties:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         title:
           type: string
           example: 'Column title'
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         cards:
           type: array
           items:
@@ -887,7 +1137,7 @@ components:
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -905,31 +1155,31 @@ components:
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
     CreateColumnResponse: 
       type: object
       properties:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         title:
           type: string
           example: 'Column title'
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         cardOrderIds:
           type: array
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f36ac75d3320bd988348b5
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -938,13 +1188,25 @@ components:
           type: string
           format: ISO8601
           example: '2023-10-01T12:00:00Z'
+    UpdateColumnBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Column title'
+        cardOrderIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: [67f36ac75d3320bd988348b5, 67f371f90ae42f2e1870f71c, 67f3725a0ae42f2e1870f71d]
     Card:
       type: object
       properties:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f371a10ae42f2e1870f71b
         title:
           type: string
           example: 'Card title'
@@ -957,11 +1219,11 @@ components:
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         columnId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f3703cbbb8b004c7b4fa6a
         members:
           type: array
           items:
@@ -973,7 +1235,7 @@ components:
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -994,18 +1256,18 @@ components:
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         columnId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f3703cbbb8b004c7b4fa6a
     CreateCardResponse:
       type: object
       properties:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f371a10ae42f2e1870f71b
         title:
           type: string
           example: 'Card title'
@@ -1015,11 +1277,11 @@ components:
         boardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         columnId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f3703cbbb8b004c7b4fa6a
         cover:
           type: string
           example: 'https://example.com/cover.jpg'
@@ -1028,17 +1290,17 @@ components:
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011        
-        commentIds:
+            example: 67f36ac75d3320bd988348b5
+        commentOrderIds:
           type: array
           items:
             type: string
             format: ObjectId
-            example: 507f1f77bcf86cd799439011
+            example: 67f371a10ae42f2e1870f71b
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -1047,24 +1309,54 @@ components:
           type: string
           format: ISO8601
           example: '2023-10-01T12:00:00Z'
+    UpdateCardBody:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Card title'
+        description:
+          type: string
+          example: 'Card description'
+        cover:
+          type: string
+          example: 'https://example.com/cover.jpg'
+        columnId:
+          type: string
+          format: ObjectId
+          example: 67f3703cbbb8b004c7b4fa6a
+        memberIds:
+          type: array
+          items:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
     Comment:
       type: object
       properties:
         _id:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         content:
           type: string
           example: 'Comment content'
+        boardId:
+          type: string
+          format: ObjectId
+          example: 67f36ac75d3320bd988348b5
+        columnId:
+          type: string
+          format: ObjectId
+          example: 67f3703cbbb8b004c7b4fa6a
         cardId:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f371a10ae42f2e1870f71b
         createdById:
           type: string
           format: ObjectId
-          example: 507f1f77bcf86cd799439011
+          example: 67f36ac75d3320bd988348b5
         createdAt:
           type: string
           format: ISO8601
@@ -1073,6 +1365,26 @@ components:
           type: string
           format: ISO8601
           example: '2023-10-01T12:00:00Z'
+    CreateCommentBody:
+      type: object
+      properties:
+        content:
+          type: string
+          example: 'Comment content'
+        cardId:
+          type: string
+          format: ObjectId
+          example: 67f371a10ae42f2e1870f71b
+    UpdateCommentBody:
+      type: object
+      properties:
+        content:
+          type: string
+          example: 'Comment content'
+        columnId:
+          type: string
+          format: ObjectId
+          example: 67f3703cbbb8b004c7b4fa6a
     UnprocessableEntityError:
         type: object
         properties:
@@ -1086,14 +1398,83 @@ components:
           error:
             type: string
             example: Unprocessable Entity
+    Invitation:
+        type: object
+        properties:
+          boardId:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
+          invitee:
+            $ref: "#/components/schemas/User"
+          status:
+            $ref: "#/components/schemas/InvitationStatus"
+          createdBy:
+            $ref: "#/components/schemas/User"
+          updateAt:
+            type: string
+            format: ISO8601
+            example: '2023-10-01T12:00:00Z'
+          createdAt:
+            type: string
+            format: ISO8601
+            example: '2023-10-01T12:00:00Z'
+    CreateInvitationBody:
+        type: object
+        properties:
+          boardId:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
+          inviteeEmail:
+            type: string
+            format: email
+            example: email@domain.com
+    CreateInvitationResponse:
+        type: object
+        properties:
+          _id:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
+          boardId:
+            type: string
+            format: ObjectId
+            example: 67f36ac75d3320bd988348b5
+          invitee:
+            $ref: "#/components/schemas/User"
+          status:
+            $ref: "#/components/schemas/InvitationStatus"
+          createdBy:
+            $ref: "#/components/schemas/User"
+          updateAt:
+            type: string
+            format: ISO8601
+            example: '2023-10-01T12:00:00Z'
+          createdAt:
+            type: string
+            format: ISO8601
+            example: '2023-10-01T12:00:00Z'
+    UpdateInvitationBody:
+        type: object
+        properties:
+          status:
+            $ref: "#/components/schemas/InvitationStatus"
     BoardType:
       type: string
       enum: [public, private]
     Role:
       type: string
       enum: [admin, client]
+    InvitationStatus:
+      type: string
+      enum: [accepted, pending, rejected]
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    CookieAuth: 
+      type: apiKey
+      name: Cookie
+      in: header

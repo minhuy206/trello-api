@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import CustomAPIError from '~/utils/CustomAPIError'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 import {
   ForgotPasswordBodySchema,
   LoginBodySchema,
@@ -27,7 +27,8 @@ const register = async (req, res, next) => {
 
 const verify = async (req, res, next) => {
   try {
-    next(await validateBody(VerifyBodySchema, req.body))
+    await validateBody(VerifyBodySchema, req.body)
+    next()
   } catch (error) {
     next(
       new CustomAPIError(
@@ -68,7 +69,8 @@ const login = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    next(await validateBody(ForgotPasswordBodySchema, req.body))
+    await validateBody(ForgotPasswordBodySchema, req.body)
+    next()
   } catch (error) {
     next(
       new CustomAPIError(
@@ -81,7 +83,8 @@ const forgotPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
   try {
-    next(await validateBody(ResetPasswordBodySchema, req.body))
+    await validateBody(ResetPasswordBodySchema, req.body)
+    next()
   } catch (error) {
     next(
       new CustomAPIError(
@@ -94,7 +97,8 @@ const resetPassword = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    next(await validateBody(UpdateBodySchema, req.body))
+    await validateBody(UpdateBodySchema, req.body)
+    next()
   } catch (error) {
     next(
       new CustomAPIError(

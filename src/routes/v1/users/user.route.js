@@ -38,6 +38,6 @@ Router.route('/delete-avatar').delete(
   userController.deleteAvatar
 )
 
-Router.route('/refresh-token').get(userController.refreshToken)
+Router.route('/refresh-token').post(userController.refreshToken)
 
 export const userRoute = Router

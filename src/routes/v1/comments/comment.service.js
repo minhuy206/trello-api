@@ -3,15 +3,32 @@ import { cardRepository } from '../cards/card.repo'
 import CustomAPIError from '~/utils/CustomAPIError'
 import { StatusCodes } from 'http-status-codes'
 import { CommentSchema } from './comment.model'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 
-const create = async (body) => {
+const create = async (userId, body) => {
   try {
-    const newComment = await commentRepository.find(
-      (
-        await commentRepository.create(validateBody(CommentSchema, body))
+    const targetCard = await cardRepository.find({
+      _id: body.cardId
+    })
+
+    if (!targetCard)
+      throw new CustomAPIError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        'Card not found'
+      )
+
+    const newComment = await commentRepository.find({
+      _id: (
+        await commentRepository.create(
+          await validateBody(CommentSchema, {
+            ...body,
+            columnId: targetCard.columnId.toString(),
+            boardId: targetCard.boardId.toString(),
+            createdById: userId
+          })
+        )
       ).insertedId
-    )
+    })
 
     if (newComment) {
       await cardRepository.updateCommentOrderIds(newComment, '$push')
@@ -22,9 +39,9 @@ const create = async (body) => {
   }
 }
 
-const update = async (comment) => {
+const update = async (commnetId, body) => {
   try {
-    const existedComment = await commentRepository.find(comment._id)
+    const existedComment = await commentRepository.find({ _id: commnetId })
 
     if (!existedComment)
       throw new CustomAPIError(
@@ -32,24 +49,34 @@ const update = async (comment) => {
         'Comment not found'
       )
 
-    if (comment.content !== existedComment.content) {
-      return await commentRepository.update(comment._id, comment)
+    if (body.content !== existedComment.content) {
+      return commentRepository.update(
+        {
+          _id: commnetId
+        },
+        body
+      )
     }
   } catch (error) {
     throw error
   }
 }
 
-const deleteComment = async (commentId) => {
+const deleteComment = async (userId, commentId) => {
   try {
-    const existedComment = await commentRepository.find(commentId)
+    const existedComment = await commentRepository.find({ _id: commentId })
     if (!existedComment)
       throw new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
         'Comment not found'
       )
+    if (!existedComment.createdById.equals(userId))
+      throw new CustomAPIError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        'You are not authorized to delete this comment'
+      )
 
-    return await commentRepository.deleteComment(commentId)
+    return commentRepository.deleteComment({ userId, commentId })
   } catch (error) {
     throw error
   }

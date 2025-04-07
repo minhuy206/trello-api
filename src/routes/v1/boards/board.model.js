@@ -28,10 +28,11 @@ export const UpdateBoardBodySchema = Joi.object({
   title: Joi.string().max(63).trim(),
   description: Joi.string().max(255).trim(),
   type: Joi.string().valid(BOARD_TYPES.PUBLIC, BOARD_TYPES.PRIVATE),
-  cardOrderIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE))
+  columnOrderIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE))
 })
 
 export const GetBoardParamsSchema = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE).trim()
 })
+
 export const UpdateBoardParamsSchema = GetBoardParamsSchema

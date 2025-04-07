@@ -37,7 +37,7 @@ const login = async (req, res, next) => {
 
 const verify = async (req, res, next) => {
   try {
-    res.status(StatusCodes.CREATED).json(await userService.verify(req.body))
+    res.status(StatusCodes.CREATED).json(await userService.verifyUser(req.body))
   } catch (error) {
     next(error)
   }

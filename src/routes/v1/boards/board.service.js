@@ -3,18 +3,18 @@ import { StatusCodes } from 'http-status-codes'
 import { cloneDeep } from 'lodash'
 import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '~/utils/constants'
 import { boardRepository } from './board.repo'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 import { BoardSchema } from './board.model'
 
 const create = async (userId, body) => {
   try {
-    return await boardRepository.find(
-      (
+    return boardRepository.find({
+      _id: (
         await boardRepository.create({
           ...(await validateBody(BoardSchema, { ...body, createdById: userId }))
         })
       ).insertedId
-    )
+    })
   } catch (error) {
     throw error
   }
@@ -63,9 +63,9 @@ const getBoard = async (userId, boardId) => {
 
 const update = async (boardId, body) => {
   try {
-    const targetBoard = await boardRepository.find(boardId)
+    const targetBoard = await boardRepository.find({ _id: boardId })
     if (!targetBoard) {
-      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Column not found')
+      throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Board not found')
     }
     return boardRepository.update(boardId, {
       ...body,

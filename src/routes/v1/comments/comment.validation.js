@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import CustomAPIError from '~/utils/CustomAPIError'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 import {
   CreateCommentBodySchema,
   DeleteCommentParamsSchema,

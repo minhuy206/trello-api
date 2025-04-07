@@ -108,11 +108,11 @@ const deleteCard = (cardId) => {
   }
 }
 
-const find = (cardId) => {
+const find = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_CARDS_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(cardId) })
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }

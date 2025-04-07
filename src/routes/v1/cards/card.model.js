@@ -35,6 +35,7 @@ export const CreateCardBodySchema = Joi.object({
   }),
   description: Joi.string().required()
 })
+
 export const UpdateCardBodySchema = Joi.object({
   title: Joi.string().required().max(63).trim().strict().messages({
     'any.required': 'Title is required',
@@ -44,12 +45,8 @@ export const UpdateCardBodySchema = Joi.object({
   }),
   description: Joi.string().optional(),
   cover: Joi.string().default(null),
-  memberIds: Joi.array()
-    .items(Joi.string().pattern(OBJECT_ID_RULE))
-    .default([]),
-  commentOrderIds: Joi.array()
-    .items(Joi.string().pattern(OBJECT_ID_RULE))
-    .default([])
+  columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
+  memberIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE)).default([])
 })
 export const GetCardParamsSchema = Joi.object({
   cardId: Joi.string().required().pattern(OBJECT_ID_RULE)

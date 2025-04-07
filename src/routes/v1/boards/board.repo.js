@@ -19,7 +19,14 @@ const getBoards = async (userId, page, itemsPerPage, q) => {
   const conditions = [
     { _destroy: false },
     {
-      memberIds: { $all: [new ObjectId(userId)] }
+      $or: [
+        {
+          memberIds: { $all: [new ObjectId(userId)] }
+        },
+        {
+          createdById: new ObjectId(userId)
+        }
+      ]
     }
   ]
   if (q) {
@@ -158,11 +165,11 @@ const updateColumnOrderIds = (column, operator) => {
   }
 }
 
-const find = (boardId) => {
+const find = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_BOARDS_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(boardId) })
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }

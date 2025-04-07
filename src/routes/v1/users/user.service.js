@@ -16,13 +16,13 @@ const verifyOTP = async (body) => {
   try {
     const otp = await userRepository.find({
       collectionName: env.MONGODB_OTPS_COLLECTION_NAME,
-      email: body.email
+      filter: { email: body.email }
     })
 
     if (otp && otp.expireAt < Date.now()) {
       await userRepository.erase({
         collectionName: env.MONGODB_PASSWORD_RESET_TOKENS_COLLECTION_NAME,
-        email: body.email
+        filter: { email: body.email }
       })
       throw new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
@@ -42,13 +42,13 @@ const verifyPasswordResetToken = async ({ email, token }) => {
   try {
     const passwordResetToken = await userRepository.find({
       collectionName: env.MONGODB_PASSWORD_RESET_TOKENS_COLLECTION_NAME,
-      email
+      filter: { email }
     })
 
     if (passwordResetToken && passwordResetToken.expireAt < Date.now()) {
       await userRepository.erase({
         collectionName: env.MONGODB_PASSWORD_RESET_TOKENS_COLLECTION_NAME,
-        email
+        filter: { email }
       })
       throw new CustomAPIError(
         StatusCodes.UNPROCESSABLE_ENTITY,
@@ -69,7 +69,7 @@ const verifyPasswordResetToken = async ({ email, token }) => {
 
 const register = async ({ username, email, password }) => {
   try {
-    const existedUsername = await userRepository.findUser('username', username)
+    const existedUsername = await userRepository.findUser({ username })
 
     if (existedUsername) {
       throw new CustomAPIError(
@@ -77,7 +77,7 @@ const register = async ({ username, email, password }) => {
         'Username already exists'
       )
     }
-    const existedEmail = await userRepository.findUser('email', email)
+    const existedEmail = await userRepository.findUser({ email })
 
     if (existedEmail) {
       throw new CustomAPIError(
@@ -85,9 +85,8 @@ const register = async ({ username, email, password }) => {
         'Email already exists'
       )
     }
-    const user = await userRepository.findUser(
-      '_id',
-      (
+    const user = await userRepository.findUser({
+      _id: (
         await userRepository.createUser({
           username,
           email,
@@ -96,7 +95,7 @@ const register = async ({ username, email, password }) => {
           isVerified: false
         })
       ).insertedId
-    )
+    })
 
     return user
   } catch (error) {
@@ -106,7 +105,7 @@ const register = async ({ username, email, password }) => {
 
 const verifyUser = async ({ email, otp }) => {
   try {
-    const existedUser = await userRepository.findUser('email', email)
+    const existedUser = await userRepository.findUser({ email })
 
     if (!existedUser)
       throw new CustomAPIError(
@@ -127,7 +126,7 @@ const verifyUser = async ({ email, otp }) => {
         }),
         userRepository.erase({
           collectionName: env.MONGODB_OTPS_COLLECTION_NAME,
-          email
+          filter: { email }
         })
       ])
       return pickUser(user)
@@ -139,7 +138,7 @@ const verifyUser = async ({ email, otp }) => {
 
 const sendOtp = async ({ email }) => {
   try {
-    const existedUser = await userRepository.findUser('email', email)
+    const existedUser = await userRepository.findUser({ email })
 
     if (!existedUser)
       throw new CustomAPIError(
@@ -183,7 +182,7 @@ const sendOtp = async ({ email }) => {
       userRepository.upsert({
         collectionName: env.MONGODB_OTPS_COLLECTION_NAME,
         schema: OtpSchema,
-        body: { otp, email }
+        body: { hashOtp: bcryptjs.hashSync(otp, 8), email }
       }),
       NodemailerProvider.sendEmail(email, customSubject, htmlContent)
     ])
@@ -271,6 +270,7 @@ const forgotPassword = async ({ email, username }) => {
       </div>
     </div>`
     const customSubject = 'Reset your password!'
+
     await Promise.all([
       userRepository.upsert({
         collectionName: env.MONGODB_PASSWORD_RESET_TOKENS_COLLECTION_NAME,
@@ -292,7 +292,7 @@ const forgotPassword = async ({ email, username }) => {
 
 const resetPassword = async ({ email, password, token }) => {
   try {
-    const existedUser = await userRepository.findUser('email', email)
+    const existedUser = await userRepository.findUser({ email })
 
     if (!existedUser)
       throw new CustomAPIError(
@@ -324,7 +324,7 @@ const updateUser = async (
   avatar
 ) => {
   try {
-    const user = await userRepository.findUser('_id', id)
+    const user = await userRepository.findUser({ id })
 
     if (!user)
       throw new CustomAPIError(
@@ -377,7 +377,7 @@ const updateUser = async (
 
 const deleteAvatar = async (id) => {
   try {
-    const user = await userRepository.findUser('_id', id)
+    const user = await userRepository.findUser({ id })
 
     if (!user)
       throw new CustomAPIError(

@@ -1,10 +1,9 @@
 import { ObjectId } from 'mongodb'
 import { GET_DB } from '~/config/mongodb'
-import { validateBody } from '~/utils/helper'
+import { validateBody } from '~/utils/formatter'
 import { UserSchema } from './user.model'
 import { env } from '~/config/environment'
-
-// const INVALID_UPDATE_FIELDS = ['_id', 'email', 'username', 'createdAt']
+import { objectPropertiesStringId2ObjectId } from '~/utils/formatter'
 
 const createUser = async (body) => {
   try {
@@ -31,11 +30,11 @@ const updateUser = (userId, account) => {
   }
 }
 
-const findUser = (field, value) => {
+const findUser = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_USERS_COLLECTION_NAME)
-      .findOne({ [field]: field === '_id' ? new ObjectId(value) : value })
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }
@@ -60,7 +59,7 @@ const upsert = async ({ collectionName, schema, body }) => {
       .collection(collectionName)
       .updateOne(
         { email: body.email },
-        { $set: { validatedBody } },
+        { $set: validatedBody },
         { upsert: true }
       )
   } catch (error) {
@@ -68,20 +67,21 @@ const upsert = async ({ collectionName, schema, body }) => {
   }
 }
 
-const find = async ({ collectionName, email }) => {
+const find = ({ collectionName, filter }) => {
   try {
-    return await GET_DB()
+    return GET_DB()
       .collection(collectionName)
-      .findOne({ email })
-      .toArray()
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw error
   }
 }
 
-const erase = async (collectionName, email) => {
+const erase = ({ collectionName, filter }) => {
   try {
-    return await GET_DB().collection(collectionName).deleteOne({ email })
+    return GET_DB()
+      .collection(collectionName)
+      .deleteOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw error
   }

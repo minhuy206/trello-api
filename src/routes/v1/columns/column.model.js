@@ -22,14 +22,12 @@ export const CreateColumnBodySchema = Joi.object({
 })
 
 export const UpdateColumnBodySchema = Joi.object({
-  title: Joi.string().required().max(63).trim().strict().messages({
+  title: Joi.string().max(63).trim().strict().messages({
     'string.empty': 'Title is not allowed to be empty',
     'string.max': 'Title must be at most 63 characters',
     'string.trim': 'Title must not have leading or trailing'
   }),
-  cardOrderIds: Joi.array()
-    .items(Joi.string().pattern(OBJECT_ID_RULE))
-    .required()
+  cardOrderIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE))
 })
 
 export const GetColumnParamsSchema = Joi.object({

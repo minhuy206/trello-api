@@ -83,11 +83,11 @@ const deleteColumn = (columnId) => {
   }
 }
 
-const find = (columnId) => {
+const find = (filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_COLUMNS_COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(columnId) })
+      .findOne(objectPropertiesStringId2ObjectId(filter))
   } catch (error) {
     throw new Error(error)
   }
