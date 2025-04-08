@@ -228,7 +228,7 @@ const login = async ({ username, email, password }) => {
       )
     ])
 
-    return { accessToken, refreshToken, user: pickUser(existedUser) }
+    return { accessToken, refreshToken, ...pickUser(existedUser) }
   } catch (error) {
     throw error
   }
@@ -324,7 +324,7 @@ const updateUser = async (
   avatar
 ) => {
   try {
-    const user = await userRepository.findUser({ id })
+    const user = await userRepository.findUser({ _id: id })
 
     if (!user)
       throw new CustomAPIError(
@@ -349,7 +349,12 @@ const updateUser = async (
         )
       )?.secure_url)
 
-    if (currentPassword && newPassword) {
+    if (newPassword && currentPassword && currentPassword === newPassword) {
+      throw new CustomAPIError(
+        StatusCodes.UNPROCESSABLE_ENTITY,
+        'New password must be different from current password'
+      )
+    } else if (newPassword && currentPassword) {
       if (!bcryptjs.compareSync(currentPassword, user.password))
         throw new CustomAPIError(StatusCodes.FORBIDDEN, 'Incorrect password')
       updateUser.password = bcryptjs.hashSync(newPassword, 8)
@@ -377,7 +382,7 @@ const updateUser = async (
 
 const deleteAvatar = async (id) => {
   try {
-    const user = await userRepository.findUser({ id })
+    const user = await userRepository.findUser({ _id: id })
 
     if (!user)
       throw new CustomAPIError(
@@ -391,18 +396,19 @@ const deleteAvatar = async (id) => {
         'Your account is not verified'
       )
 
-    const updatedUser = await userRepository.updateUser(id, {
-      avatar: null,
-      updatedAt: Date.now()
-    })
-
-    updatedUser &&
-      (await CloudinaryProvider.deleteImage(
-        cloudinarySecureUrl2PublicId(
-          `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
-          user.avatar
+    const [updatedUser] = await Promise.all([
+      userRepository.updateUser(id, {
+        avatar: null,
+        updatedAt: Date.now()
+      }),
+      user.avatar &&
+        CloudinaryProvider.deleteImage(
+          cloudinarySecureUrl2PublicId(
+            `${env.PROJECT_NAME}/${env.CLOUDINARY_USERS_COLLECTION_NAME}/${user.username}/avatar`,
+            user.avatar
+          )
         )
-      ))
+    ])
 
     return pickUser(updatedUser)
   } catch (error) {

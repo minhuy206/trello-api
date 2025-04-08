@@ -67,14 +67,8 @@ export const RegisterBodySchema = Joi.object({
     .required()
     .pattern(PASSWORD_RULE)
     .message(PASSWORD_RULE_MESSAGE),
-  confirmPassword: Joi.string().required().messages({
-    'any.required': 'Confirm password is required'
-  })
-})
-  .with('password', 'confirmPassword')
-  .messages({
-    'object.with': '"password" and "confirmPassword" must match'
-  })
+  confirmPassword: Joi.ref('password')
+}).with('password', 'confirmPassword')
 
 export const LoginBodySchema = Joi.object({
   email: Joi.string().pattern(EMAIL_RULE).message(EMAIL_RULE_MESSAGE),
@@ -115,21 +109,14 @@ export const ResetPasswordBodySchema = Joi.object({
     .pattern(PASSWORD_RULE)
     .message(PASSWORD_RULE_MESSAGE)
     .required(),
-  confirmPassword: Joi.string()
-    .required()
-    .pattern(PASSWORD_RULE)
-    .message(PASSWORD_RULE_MESSAGE)
+  confirmPassword: Joi.ref('password')
 }).with('password', 'confirmPassword')
 
 export const UpdateBodySchema = Joi.object({
   displayName: Joi.string().trim().strict(),
-  username: Joi.string().pattern(USERNAME_RULE).message(USERNAME_RULE_MESSAGE),
-  currentPassword: Joi.string()
-    .required()
-    .pattern(PASSWORD_RULE)
-    .message(PASSWORD_RULE_MESSAGE),
-  newPassword: Joi.string()
-    .required()
-    .pattern(PASSWORD_RULE)
-    .message(PASSWORD_RULE_MESSAGE)
-}).or('username', 'displayName', 'newPassword')
+  currentPassword: Joi.string().pattern(PASSWORD_RULE),
+  newPassword: Joi.string().pattern(PASSWORD_RULE),
+  confirmPassword: Joi.ref('newPassword')
+})
+  .with('password', 'confirmPassword')
+  .and('newPassword', 'confirmPassword', 'currentPassword')

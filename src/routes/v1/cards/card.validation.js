@@ -38,6 +38,7 @@ const update = async (req, res, next) => {
       validateBody(UpdateCardBodySchema, req.body),
       validateBody(UpdateCardParamsSchema, req.params)
     ])
+
     next()
   } catch (error) {
     next(

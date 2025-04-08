@@ -24,8 +24,8 @@ const createInvitation = async (req, res, next) => {
 const updateInvitation = async (req, res, next) => {
   try {
     await Promise.all([
-      validateBody(UpdateInvitationBodySchema, req.body),
-      validateBody(UpdateInvitationParamsSchema, req.params)
+      validateBody(UpdateInvitationParamsSchema, req.params),
+      validateBody(UpdateInvitationBodySchema, req.body)
     ])
     next()
   } catch (error) {

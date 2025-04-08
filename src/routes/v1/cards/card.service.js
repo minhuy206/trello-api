@@ -1,10 +1,7 @@
 import { StatusCodes } from 'http-status-codes'
-import { cloneDeep } from 'lodash'
-import { ObjectId } from 'mongodb'
 import { env } from '~/config/environment'
 import { CloudinaryProvider } from '~/providers/cloudinary.provider'
 import CustomAPIError from '~/utils/CustomAPIError'
-import { CARD_MEMBER_ACTION } from '~/utils/constants'
 import { cloudinarySecureUrl2PublicId } from '~/utils/formatter'
 import { cardRepository } from './card.repo'
 import { columnRepository } from '../columns/column.repo'
@@ -52,15 +49,7 @@ const getCard = async (userId, cardId) => {
       throw new CustomAPIError(StatusCodes.NOT_FOUND, 'Card not found')
     }
 
-    const resCard = cloneDeep(card)
-    resCard.comments.forEach(
-      (comment) =>
-        (comment.createdBy = resCard.members.find((user) =>
-          user._id.equals(comment.userId)
-        ))
-    )
-    delete resCard.users
-    return resCard
+    return card
   } catch (error) {
     throw error
   }
@@ -87,34 +76,18 @@ const update = async (cardId, card, cardCover) => {
       card.cover = cover.secure_url
     }
 
-    if (card.updateCardMemberIdData) {
-      if (card.updateCardMemberIdData.action === CARD_MEMBER_ACTION.ADD) {
-        card.memberIds = [
-          ...existedCard.memberIds,
-          new ObjectId(card.updateCardMemberIdData.memberId)
-        ]
-      } else if (
-        card.updateCardMemberIdData.action === CARD_MEMBER_ACTION.REMOVE
-      ) {
-        card.memberIds = existedCard.memberIds.filter(
-          (memberId) =>
-            memberId.toString() !== card.updateCardMemberIdData.memberId
-        )
-      }
-      delete card.updateCardMemberIdData
-    }
-
     if (existedCard.columnId !== card?.columnId) {
       await commentRepository.updateComments(
         { cardId },
         { columnId: card.columnId }
       )
     }
-
-    return cardRepository.update(cardId, {
+    const updatedCard = await cardRepository.update(cardId, {
       ...card,
       updatedAt: Date.now()
     })
+
+    return updatedCard
   } catch (error) {
     throw error
   }

@@ -32,22 +32,22 @@ export const CreateCardBodySchema = Joi.object({
     'string.empty': 'Title is not allowed to be empty',
     'string.max': 'Title must be at most 63 characters',
     'string.trim': 'Title must not have leading or trailing whitespace'
-  }),
-  description: Joi.string().required()
+  })
 })
 
 export const UpdateCardBodySchema = Joi.object({
-  title: Joi.string().required().max(63).trim().strict().messages({
+  title: Joi.string().max(63).trim().messages({
     'any.required': 'Title is required',
     'string.empty': 'Title is not allowed to be empty',
     'string.max': 'Title must be at most 63 characters',
     'string.trim': 'Title must not have leading or trailing whitespace'
   }),
-  description: Joi.string().optional(),
+  description: Joi.string(),
   cover: Joi.string().default(null),
-  columnId: Joi.string().required().pattern(OBJECT_ID_RULE),
-  memberIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE)).default([])
+  columnId: Joi.string().pattern(OBJECT_ID_RULE),
+  memberIds: Joi.array().items(Joi.string().pattern(OBJECT_ID_RULE))
 })
+
 export const GetCardParamsSchema = Joi.object({
   cardId: Joi.string().required().pattern(OBJECT_ID_RULE)
 })

@@ -3,11 +3,29 @@ import { objectPropertiesStringId2ObjectId } from '~/utils/formatter'
 import { GET_DB } from '~/config/mongodb'
 import { ObjectId } from 'mongodb'
 
-const createInvitation = (body) => {
+// const createInvitation = (body) => {
+//   try {
+//     return GET_DB()
+//       .collection(env.MONGODB_INVITATIONS_COLLECTION_NAME)
+//       .insertOne(objectPropertiesStringId2ObjectId(body))
+//   } catch (error) {
+//     throw new Error(error)
+//   }
+// }
+const createInvitation = async (body, filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_INVITATIONS_COLLECTION_NAME)
-      .insertOne(objectPropertiesStringId2ObjectId(body))
+      .findOneAndUpdate(
+        objectPropertiesStringId2ObjectId(filter),
+        {
+          $set: objectPropertiesStringId2ObjectId(body)
+        },
+        {
+          upsert: true,
+          returnDocument: 'after'
+        }
+      )
   } catch (error) {
     throw new Error(error)
   }
@@ -23,8 +41,7 @@ const findByUser = (userId) => {
             $and: [
               {
                 inviteeId: new ObjectId(userId)
-              },
-              { _destroy: false }
+              }
             ]
           }
         },
@@ -53,6 +70,18 @@ const findByUser = (userId) => {
             foreignField: '_id',
             as: 'board'
           }
+        },
+        {
+          $unwind: {
+            path: '$createdBy',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $unwind: {
+            path: '$board',
+            preserveNullAndEmptyArrays: true
+          }
         }
       ])
       .toArray()
@@ -75,7 +104,7 @@ const update = (body, filter) => {
   try {
     return GET_DB()
       .collection(env.MONGODB_INVITATIONS_COLLECTION_NAME)
-      .updateOne(
+      .findOneAndUpdate(
         objectPropertiesStringId2ObjectId(filter),
         {
           $set: {

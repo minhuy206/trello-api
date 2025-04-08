@@ -256,6 +256,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+  /users/update:
+    put:
+      tags:
+        - User
+      summary: Update user
+      description: Update user information.
+      operationId: updateUser
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+        required: true
+      responses:
+        '201':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessableEntityError"
+      security:
+        - BearerAuth: []
   /boards:
     get:
       tags:
@@ -1133,7 +1162,7 @@ components:
         cards:
           type: array
           items:
-            $ref: "#/components/schemas/Card"
+            $ref: "#/components/schemas/CreateCardResponse"
         createdById:
           type: string
           format: ObjectId
@@ -1199,7 +1228,7 @@ components:
           items:
             type: string
             format: ObjectId
-            example: [67f36ac75d3320bd988348b5, 67f371f90ae42f2e1870f71c, 67f3725a0ae42f2e1870f71d]
+            example: "67f36ac75d3320bd988348b5"
     Card:
       type: object
       properties:
@@ -1250,9 +1279,6 @@ components:
         title:
           type: string
           example: 'Card title'
-        description:
-          type: string
-          example: 'Card description'
         boardId:
           type: string
           format: ObjectId
@@ -1474,7 +1500,3 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-    CookieAuth: 
-      type: apiKey
-      name: Cookie
-      in: header

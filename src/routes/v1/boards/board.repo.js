@@ -124,6 +124,21 @@ const getBoard = async (userId, boardId) => {
             as: 'members',
             pipeline: [{ $project: { password: 0, isVerified: 0 } }]
           }
+        },
+        {
+          $lookup: {
+            from: env.MONGODB_USERS_COLLECTION_NAME,
+            localField: 'createdById',
+            foreignField: '_id',
+            as: 'createdBy',
+            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
+          }
+        },
+        {
+          $unwind: {
+            path: '$createdBy',
+            preserveNullAndEmptyArrays: true
+          }
         }
       ])
       .toArray()

@@ -39,25 +39,36 @@ const createInvitation = async ({ inviteeEmail, boardId }, userId) => {
       )
     }
 
-    const invitation = await invitationRepository.find({
-      _id: (
-        await invitationRepository.createInvitation(
-          await validateBody(InvitationSchema, {
-            createdById: userId,
-            inviteeId: invitee._id.toString(),
-            boardId: boardId,
-            status: INVITATION_STATUS.PENDING
-          })
+    let invitation = await invitationRepository.createInvitation(
+      await validateBody(InvitationSchema, {
+        createdById: userId,
+        inviteeId: invitee._id.toString(),
+        boardId: boardId
+      }),
+      {
+        boardId: board._id,
+        inviteeId: invitee._id,
+        createdById: createdBy._id
+      }
+    )
+
+    if (!invitation) {
+      invitation = await invitationRepository.find({
+        boardId: board._id,
+        inviteeId: invitee._id,
+        createdById: createdBy._id,
+        status: INVITATION_STATUS.PENDING
+      })
+      if (!invitation) {
+        throw new CustomAPIError(
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          'Could not send invitation. Please try again later.'
         )
-      ).insertedId
-    })
+      }
+    }
 
     return {
-      _id: invitation._id,
-      boardId: invitation.boardId,
-      status: invitation.status,
-      createdAt: invitation.createdAt,
-      updatedAt: invitation.updatedAt,
+      ...invitation,
       createdBy: pickUser(createdBy),
       invitee: pickUser(invitee)
     }
@@ -66,16 +77,9 @@ const createInvitation = async ({ inviteeEmail, boardId }, userId) => {
   }
 }
 
-const getInvitations = async (userId) => {
+const getInvitations = (userId) => {
   try {
-    return (await invitationRepository.findByUser(userId)).map((invitation) => {
-      return {
-        ...invitation,
-        board: invitation.board[0] || {},
-        createdBy: invitation.createdBy[0] || {},
-        invitee: invitation.invitee[0] || {}
-      }
-    })
+    return invitationRepository.findByUser(userId)
   } catch (error) {
     throw error
   }
@@ -105,8 +109,8 @@ const updateInvitation = async (invitationId, userId, body) => {
     }
 
     const boardUsers = [
-      ...targetBoard.ownerIds,
-      ...targetBoard.memberIds
+      ...targetBoard.memberIds,
+      targetBoard.createdById
     ].toString()
 
     if (
@@ -122,46 +126,38 @@ const updateInvitation = async (invitationId, userId, body) => {
         invitationRepository.update(body, {
           boardId: targetBoard._id,
           inviteeId: userId,
+          _id: targetInvitation._id,
           status: INVITATION_STATUS.PENDING,
           createdById: targetInvitation.createdById
         }),
         boardRepository.update(targetBoard._id, {
           memberIds: [...targetBoard.memberIds, new ObjectId(userId)]
         }),
-        userRepository.find({ _id: userId }),
-        userRepository.find({ _id: targetInvitation.inviteeId })
+        userRepository.findUser({ _id: userId }),
+        userRepository.findUser({ _id: targetInvitation.inviteeId })
       ])
 
       return {
-        boardId: invitation.boardId,
+        ...invitation,
         invitee: pickUser(invitee),
-        status: invitation.status,
-        createdBy: pickUser(createdBy),
-        createdAt: invitation.createdAt,
-        updatedAt: invitation.updatedAt
+        createdBy: pickUser(createdBy)
       }
     } else if (body.status === INVITATION_STATUS.REJECTED) {
-      const [invitation, , createdBy, invitee] = await Promise.all([
+      const [invitation, createdBy, invitee] = await Promise.all([
         invitationRepository.update(body, {
           boardId: targetBoard._id,
           inviteeId: userId,
+          _id: targetInvitation._id,
           status: INVITATION_STATUS.PENDING,
           createdById: targetInvitation.createdById
         }),
-        boardRepository.update(targetBoard._id, {
-          memberIds: [...targetBoard.memberIds, new ObjectId(userId)]
-        }),
-        userRepository.find({ _id: userId }),
-        userRepository.find({ _id: targetInvitation.inviteeId })
+        userRepository.findUser({ _id: userId }),
+        userRepository.findUser({ _id: targetInvitation.inviteeId })
       ])
-
       return {
-        boardId: invitation.boardId,
+        ...invitation,
         invitee: pickUser(invitee),
-        status: invitation.status,
-        createdBy: pickUser(createdBy),
-        createdAt: invitation.createdAt,
-        updatedAt: invitation.updatedAt
+        createdBy: pickUser(createdBy)
       }
     }
   } catch (error) {

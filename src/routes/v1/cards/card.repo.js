@@ -24,15 +24,6 @@ const getCardIncludeComments = async (userId, cardId) => {
             foreignField: 'cardId',
             as: 'comments'
           }
-        },
-        {
-          $lookup: {
-            from: env.MONGODB_USERS_COLLECTION_NAME,
-            localField: 'memberIds',
-            foreignField: '_id',
-            as: 'members',
-            pipeline: [{ $project: { password: 0, isVerified: 0 } }]
-          }
         }
       ])
       .toArray()
@@ -52,13 +43,20 @@ const create = (body) => {
   }
 }
 
-const update = (cardId, card) => {
+const update = (cardId, body) => {
   try {
+    if (body.memberIds) {
+      body.memberIds = body.memberIds.map((id) => new ObjectId(id))
+    }
+    if (body.commentOrderIds) {
+      body.commentOrderIds = body.commentOrderIds.map((id) => new ObjectId(id))
+    }
+
     return GET_DB()
       .collection(env.MONGODB_CARDS_COLLECTION_NAME)
       .findOneAndUpdate(
         { _id: new ObjectId(cardId) },
-        { $set: objectPropertiesStringId2ObjectId(card) },
+        { $set: objectPropertiesStringId2ObjectId(body) },
         { returnDocument: 'after' }
       )
   } catch (error) {
@@ -74,7 +72,7 @@ const updateCommentOrderIds = (comment, operator) => {
         { _id: new ObjectId(comment.cardId) },
         {
           [operator]: {
-            commentIds:
+            commentOrderIds:
               operator === '$push'
                 ? { $each: [new ObjectId(comment._id)], $position: 0 }
                 : new ObjectId(comment._id)

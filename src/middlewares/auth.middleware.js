@@ -4,8 +4,8 @@ import { JwtProvider } from '~/providers/jwt.provider'
 import CustomAPIError from '~/utils/CustomAPIError'
 
 const isAuthorized = async (req, res, next) => {
-  // const clientAccessToken = req.cookies?.accessToken
-  const clientAccessToken = req.headers?.authorization?.split(' ')[1]
+  const clientAccessToken =
+    req.headers?.authorization?.split(' ')[1] || req.cookies?.accessToken
   if (!clientAccessToken) {
     next(
       new CustomAPIError(

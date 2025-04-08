@@ -27,7 +27,7 @@ const update = async (req, res, next) => {
       .status(StatusCodes.OK)
       .json(
         await cardService.update(
-          req.params.id,
+          req.params.cardId,
           req.body,
           req.file,
           req.jwtDecoded.id
@@ -42,7 +42,7 @@ const deleteCard = async (req, res, next) => {
   try {
     return res
       .status(StatusCodes.OK)
-      .json(await cardService.deleteCard(req.params.id, req.jwtDecoded.id))
+      .json(await cardService.deleteCard(req.params.cardId, req.jwtDecoded.id))
   } catch (error) {
     next(error)
   }

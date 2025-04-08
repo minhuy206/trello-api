@@ -53,7 +53,8 @@ const getBoard = async (userId, boardId) => {
         (card) => card.columnId.equals(column._id) // Equals is a method supported by Mongodb to compare 2 ObjectId
       )
     })
-    delete resBoard.cards
+    resBoard.members = [...resBoard.members, resBoard.createdBy]
+    delete resBoard.cards, delete resBoard.createdBy
 
     return resBoard
   } catch (error) {
