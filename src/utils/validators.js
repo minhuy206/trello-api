@@ -2,7 +2,8 @@ export const OBJECT_ID_RULE = /^[0-9a-fA-F]{24}$/
 
 export const USERNAME_RULE =
   /^(?=[a-zA-Z0-9._]{6,20}$)(?!.*[_.]{2})[^_.].*[^_.]$/
-export const USERNAME_RULE_MESSAGE = 'Username is invalid.'
+export const USERNAME_RULE_MESSAGE =
+  'Username must be 6-20 characters long and can only contain letters, numbers, dots, and underscores. It cannot start or end with a dot or underscore, and cannot have consecutive dots or underscores.'
 export const EMAIL_RULE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 export const EMAIL_RULE_MESSAGE = 'Email is invalid.'
 export const PASSWORD_RULE = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d\W]{8,256}$/
