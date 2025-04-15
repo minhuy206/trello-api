@@ -1,8 +1,5 @@
 import { env } from '~/config/environment'
-export const WHITELIST_DOMAINS = [
-  'https://trello.minhuy.dev',
-  'https://api-trello.minhuy.dev'
-]
+export const WHITELIST_DOMAINS = ['https://trello.minhuy.dev']
 
 export const BOARD_TYPES = {
   PUBLIC: 'public',
