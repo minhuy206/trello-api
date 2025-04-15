@@ -10,7 +10,7 @@ export const corsOptions = {
     if (env.BUILD_MODE === 'dev') {
       return callback(null, true)
     }
-
+  console.log('CORS: ', origin)
     if (WHITELIST_DOMAINS.includes(origin)) {
       return callback(null, true)
     }
