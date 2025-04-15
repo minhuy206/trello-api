@@ -12,6 +12,12 @@ import { env } from '~/config/environment'
 import { APIs_V1 } from '~/routes/v1'
 import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware'
 import { inviteUserToBoardSocket } from './sockets/inviteUserToBoardSocket'
+import YAML from 'yaml'
+import fs from 'fs'
+import path from 'path'
+import swaggerUi from 'swagger-ui-express'
+const file = fs.readFileSync(path.resolve('api-trello.swagger.yaml'), 'utf8')
+const swaggerDoc = YAML.parse(file)
 
 const START_SERVER = () => {
   const app = express()
@@ -30,6 +36,14 @@ const START_SERVER = () => {
 
   // Use APIs_V1
   app.use('/v1', APIs_V1)
+
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDoc, {
+      explorer: true
+    })
+  )
 
   // Middleware error handling
   app.use(errorHandlingMiddleware)
